@@ -6,7 +6,7 @@
 
     <!-- Scrim: swallows clicks so the page underneath stays inert, and dismisses on click -->
     <Grid x:Name="Scrim"
-          Background="#8C000000"
+          Background="#C0000000"
           MouseLeftButtonDown="Scrim_MouseLeftButtonDown">
 
         <!-- The card is centred in the scrim, so at an odd window width its left edge lands on a
@@ -49,14 +49,14 @@
                         Click="CloseBtn_Click"/>
 
                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="24,4,24,18">
-                    <TextBlock Text="OverTranslate"
-                               FontFamily="{StaticResource AppFont}"
+                    <TextBlock Text="{DynamicResource S.App.Title}"
+                               FontFamily="{DynamicResource AppFont}"
                                FontSize="22"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource AppTextPrimary}"
                                HorizontalAlignment="Center"/>
                     <TextBlock x:Name="VersionText"
-                               FontFamily="{StaticResource AppFont}"
+                               FontFamily="{DynamicResource AppFont}"
                                FontSize="13"
                                Foreground="{DynamicResource AppTextSecondary}"
                                HorizontalAlignment="Center"
@@ -68,12 +68,12 @@
                 <StackPanel Grid.Row="2" Margin="0,16,0,16">
                     <Grid Margin="0,0,0,12">
                         <TextBlock Text="{DynamicResource S.About.Author}"
-                                   FontFamily="{StaticResource AppFont}"
+                                   FontFamily="{DynamicResource AppFont}"
                                    FontSize="13"
                                    Foreground="{DynamicResource AppTextSecondary}"
                                    HorizontalAlignment="Left"/>
-                        <TextBlock Text="Hon.Lu (asd880921)"
-                                   FontFamily="{StaticResource AppFont}"
+                        <TextBlock Text="LaoBai (baimoushare)"
+                                   FontFamily="{DynamicResource AppFont}"
                                    FontSize="13"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextPrimary}"
@@ -91,7 +91,7 @@
                                        Foreground="{DynamicResource AppTextSecondary}"/>
                             <TextBlock Text="{DynamicResource S.About.ViewSource}"
                                        VerticalAlignment="Center"
-                                       FontFamily="{StaticResource AppFont}"/>
+                                       FontFamily="{DynamicResource AppFont}"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -102,7 +102,7 @@
                      ⭐ emoji: WPF has no colour-font support, so the emoji would fall back to a
                      black-and-white glyph at an unpredictable size. -->
                 <TextBlock Grid.Row="3"
-                           FontFamily="{StaticResource AppFont}"
+                           FontFamily="{DynamicResource AppFont}"
                            FontSize="12"
                            Foreground="{DynamicResource AppTextSecondary}"
                            TextWrapping="Wrap"

@@ -18,7 +18,7 @@ namespace OverTranslate.Views.Shell;
 /// </summary>
 public partial class AboutOverlay : UserControl
 {
-    private const string GitHubUrl = "https://github.com/asd880921/OverTranslate";
+    private const string GitHubUrl = "https://github.com/baimoushare/yiwen-translate";
 
     private static readonly Duration FadeDuration = new(TimeSpan.FromMilliseconds(140));
 

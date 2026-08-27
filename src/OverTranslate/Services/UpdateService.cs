@@ -11,7 +11,15 @@ public sealed record UpdateInfo(
 
 public static class UpdateService
 {
-    private const string GitHubRepoUrl = "https://github.com/asd880921/OverTranslate";
+    private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
+
+    // The releases feed this build checks. Points at the project's own server (Velopack HttpSource),
+    // which serves the update directory: releases.win.json + the nupkg packages. A static HTTPS
+    // directory holding the "artifacts/releases" output is all HttpSource needs.
+    // Empty = update checks disabled: this fork is severed from the upstream repo, and until its
+    // own feed exists, polling upstream would offer users a downgrade that overwrites this fork's
+    // features. Point this at the new home to re-enable - the rest of the machinery is untouched.
+    private const string GitHubRepoUrl = "https://update.baimoushare.cn/yiwen/";
     private const string StableChannel = "win";
     private const string BetaChannel = "beta";
 
@@ -20,6 +28,15 @@ public static class UpdateService
 
     public static async Task<UpdateInfo?> CheckAsync()
     {
+        // No feed configured: this build is severed from upstream and has no feed of its own yet.
+        // Returning quietly keeps the nav rail dark and the startup dialog absent, and says in the
+        // log once per poll why — a silent null would look like a broken check from the outside.
+        if (string.IsNullOrWhiteSpace(GitHubRepoUrl))
+        {
+            Log.Info("Update check disabled: no releases feed configured for this build");
+            return null;
+        }
+
         var fake = CreateFakeUpdate();
         if (fake is not null)
             return fake;
@@ -107,10 +124,10 @@ public static class UpdateService
 
         var asset = new VelopackAsset
         {
-            PackageId = "OverTranslate",
+            PackageId = "Yiwen",
             Version = parsed,
             Type = VelopackAssetType.Full,
-            FileName = $"OverTranslate-{parsed}-full.nupkg"
+            FileName = $"Yiwen-{parsed}-full.nupkg"
         };
 
         return new UpdateInfo(
@@ -167,6 +184,17 @@ public static class UpdateService
             : Environment.GetEnvironmentVariable("OVERTRANSLATE_UPDATE_TOKEN");
         if (string.IsNullOrWhiteSpace(repoUrl))
             repoUrl = GitHubRepoUrl;
+
+        // 自建服务器更新源（Velopack SimpleWebSource）：静态 HTTPS 目录，目录里有 releases.win.json 与 nupkg。
+        // SimpleWebSource 不接受 token（公开目录），若想临时指向私有 GitHub 演练源，则退回 GithubSource。
+        if (Uri.TryCreate(repoUrl, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+            && !string.IsNullOrWhiteSpace(repoUrl)
+            && repoUrl.StartsWith("https://github.com", StringComparison.OrdinalIgnoreCase) == false)
+        {
+            // 服务器目录源
+            return new UpdateManager(new SimpleWebSource(repoUrl), options);
+        }
 
         return new UpdateManager(new GithubSource(repoUrl, token, prerelease: seesPrerelease), options);
     }

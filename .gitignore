@@ -51,6 +51,10 @@ Desktop.ini
 *.rsuser
 launchSettings.json
 
+# 内部工作文档（不入库）
+docs/优化方案-2026-08-22.md
+docs/增强版交付说明.md
+
 # publish
 # publish-velopack.ps1 與 docs/ops/ 的發版文件都已納入版控 ——
 # CI 在本倉打包，腳本與文件都必須跟著程式碼走，否則一定漂移。

@@ -1,13 +1,13 @@
-param(
+﻿param(
     # 相對路徑一律以 $PSScriptRoot（本腳本所在的專案根目錄）為基準，不是當前工作目錄，
     # 所以從哪裡呼叫都可以——CI 的工作目錄與人在本機的習慣不一定相同。
     [string]$ProjectPath = ".\src\OverTranslate\OverTranslate.csproj",
     [string]$PublishDir = ".\src\OverTranslate\bin\Publish",
     [string]$OutputDir = ".\artifacts\releases",
-    [string]$PackId = "OverTranslate",
-    [string]$PackTitle = "OverTranslate",
-    [string]$PackAuthors = "Hon.Lu",
-    [string]$MainExe = "OverTranslate.exe",
+    [string]$PackId = "Yiwen",
+    [string]$PackTitle = "Yiwen Translate",
+    [string]$PackAuthors = "LaoBai",
+    [string]$MainExe = "Yiwen.exe",
     [string]$IconPath = ".\src\OverTranslate\icons\icon_256.ico",
     [string]$Channel = "win",
     [string]$PublishProfile = "FolderProfile",

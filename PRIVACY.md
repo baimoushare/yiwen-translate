@@ -98,11 +98,11 @@ Pressing that button also uploads the file and returns a short code the user can
 
 
 
-Uploaded files are held by Cloudflare (Workers KV) in an account operated by the project maintainer, under a name that cannot be worked out from the code shown to the user, and are deleted automatically 30 days after upload. No IP address or other identifier is stored with them: the only information kept alongside the file is the time of upload, the application version, and the operating system it reported. The code identifies an upload to the maintainer only — the application offers no way to browse or download uploaded files.
+Uploaded files are held on the project's own server (update.baimoushare.cn), under a name that cannot be worked out from the code shown to the user, and are deleted automatically 30 days after upload. No IP address or other identifier is stored with them: the only information kept alongside the file is the time of upload, the application version, and the operating system it reported. The code identifies an upload to the maintainer only — the application offers no way to browse or download uploaded files.
 
 
 
-The source code of the receiving endpoint is public and can be read at https://github.com/asd880921/OverTranslate-Diag-Worker
+The receiving endpoint is a PHP script in the project's own repository, readable at the project's GitHub repository (tools/self-hosted/diag-receiver.php).
 
 
 
@@ -114,5 +114,6 @@ For questions about this privacy policy, please contact the project maintainer t
 
 
 
-https://github.com/asd880921/OverTranslate
+https://github.com/baimoushare/yiwen-translate
+
 

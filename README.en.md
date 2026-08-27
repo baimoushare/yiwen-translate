@@ -6,31 +6,31 @@
     <strong><a href="README.md">繁體中文</a></strong>
   </p>
 
-  <img src="src/OverTranslate/icons/icon.svg" width="250" alt="OverTranslate Icon"/>
-  <h1>OverTranslate</h1>
+  <img src="src/OverTranslate/icons/icon_256.png" width="250" alt="Yiwen Icon"/>
+  <h1>Yiwen Translate</h1>
   <p>A Windows screen translator with screenshot translation, real-time translation, and translations overlaid in place</p>
 
   <p>
-    <img src="https://img.shields.io/github/v/release/asd880921/OverTranslate?style=for-the-badge&label=latest%20release" alt="Latest release" />
     <img src="https://img.shields.io/badge/license-GPL--3.0-22C55E?style=for-the-badge" alt="License GPL-3.0" />
-    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/asd880921/github-badges/main/badges/overtranslate-downloads.json" alt="Total downloads" />
   </p>
 
   <p>
-    <a href="https://github.com/asd880921/OverTranslate/releases/latest/download/OverTranslate-win-Setup.exe">
+    <a href="https://github.com/baimoushare/yiwen-translate/releases/latest/download/Yiwen-win-Setup.exe">
       <strong>➡️ Windows Installer (recommended)</strong>
     </a>
     &nbsp;｜&nbsp;
-    <a href="https://github.com/asd880921/OverTranslate/releases/latest/download/OverTranslate-win-Portable.zip">
+    <a href="https://github.com/baimoushare/yiwen-translate/releases/latest/download/Yiwen-win-Portable.zip">
       <strong>➡️ Portable version</strong>
     </a>
   </p>
 
 </div>
 
+> **Yiwen Translate** is a Chinese-localised fork of [OverTranslate](https://github.com/asd880921/OverTranslate). The renamed packId is `Yiwen`; it does not share an update channel with upstream, so migrating from OverTranslate requires a manual install.
+
 ## What is this?
 
-**OverTranslate** is a real-time screen translation tool built for Windows.
+**Yiwen Translate** is a real-time screen translation tool built for Windows.
 
 It supports both **screenshot translation** and **real-time translation**: text on your screen is recognized, translated, and displayed right where the original text is.
 Whether it's games, PDFs, video subtitles, or any other text you can't select directly, you can translate it instantly without constantly switching windows while reading.  
@@ -205,7 +205,7 @@ The following translation services require some extra setup:
 
 ## Support
 
-If this software helps you in your daily life or work, feel free to buy me a coffee on [Ko-fi](https://ko-fi.com/honlu) ~ ☕
+If this software helps you in your daily life or work, feel free to support me on [Afdian](https://afdian.com/a/laobai) ~ ☕
 
 ---
 

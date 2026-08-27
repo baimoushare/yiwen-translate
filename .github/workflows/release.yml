@@ -85,7 +85,7 @@ jobs:
           # 同一個版號重壓一次 tag 時，包出來的東西會跟線上某一版同號但內容不同。
           # 那會讓已經更新過的使用者永遠收不到這一版（版號沒變大），而且不會有任何錯誤。
           # 寧可在這裡失敗。
-          $target = "OverTranslate-${{ steps.ver.outputs.version }}-full.nupkg"
+          $target = "Yiwen-${{ steps.ver.outputs.version }}-full.nupkg"
           $existing = gh api --paginate repos/${{ github.repository }}/releases `
               --jq '.[].assets[].name' 2>$null
           if ($existing -contains $target) {
@@ -126,11 +126,11 @@ jobs:
           # 那個線上已經有了，重傳只是浪費 100+ MB。
           $assets = @(
               "$dir\releases.win.json"
-              "$dir\OverTranslate-$v-full.nupkg"
-              "$dir\OverTranslate-win-Setup.exe"
-              "$dir\OverTranslate-win-Portable.zip"
+              "$dir\Yiwen-$v-full.nupkg"
+              "$dir\Yiwen-win-Setup.exe"
+              "$dir\Yiwen-win-Portable.zip"
           )
-          $delta = "$dir\OverTranslate-$v-delta.nupkg"
+          $delta = "$dir\Yiwen-$v-delta.nupkg"
           if (Test-Path $delta) { $assets += $delta } else { Write-Warning "沒有 delta，使用者這一版要下載完整包。" }
 
           foreach ($a in $assets) {

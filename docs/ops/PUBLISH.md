@@ -92,15 +92,15 @@ powershell -ExecutionPolicy Bypass -File .\publish-velopack.ps1
 產生 delta，換機器或誤刪之後要先抓回來：
 
 ```powershell
-vpk download github --repoUrl https://github.com/asd880921/OverTranslate --channel win --outputDir .\artifacts\releases
+vpk download github --repoUrl https://github.com/baimoushare/yiwen-translate --channel win --outputDir .\artifacts\releases
 ```
 
 上傳到 GitHub Release 的檔案（**勾選 Set as a pre-release**，確認後再取消）：
 
 - `releases.win.json`
-- `OverTranslate-win-Setup.exe`
-- `OverTranslate-win-Portable.zip`
-- `OverTranslate-<版本>-full.nupkg`（及 `-delta.nupkg`，若有）
+- `Yiwen-win-Setup.exe`
+- `Yiwen-win-Portable.zip`
+- `Yiwen-<版本>-full.nupkg`（及 `-delta.nupkg`，若有）
 
 ---
 

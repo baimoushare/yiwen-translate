@@ -6,31 +6,31 @@
     <strong>繁體中文 ✓</strong>
   </p>
 
-  <img src="src/OverTranslate/icons/icon.svg" width="250" alt="OverTranslate Icon"/>
-  <h1>OverTranslate</h1>
+  <img src="src/OverTranslate/icons/icon_256.png" width="250" alt="Yiwen Icon"/>
+  <h1>译文 · Yiwen Translate</h1>
   <p>一款 Windows 螢幕翻譯工具，支援截圖翻譯、即時翻譯與譯文原位覆蓋。</p>
 
   <p>
-    <img src="https://img.shields.io/github/v/release/asd880921/OverTranslate?style=for-the-badge&label=latest%20release" alt="Latest release" />
     <img src="https://img.shields.io/badge/license-GPL--3.0-22C55E?style=for-the-badge" alt="License GPL-3.0" />
-    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/asd880921/github-badges/main/badges/overtranslate-downloads.json" alt="Total downloads" />
   </p>
 
   <p>
-    <a href="https://github.com/asd880921/OverTranslate/releases/latest/download/OverTranslate-win-Setup.exe">
+    <a href="https://github.com/baimoushare/yiwen-translate/releases/latest/download/Yiwen-win-Setup.exe">
       <strong>➡️ Windows 安裝版（推薦）</strong>
     </a>
     &nbsp;｜&nbsp;
-    <a href="https://github.com/asd880921/OverTranslate/releases/latest/download/OverTranslate-win-Portable.zip">
+    <a href="https://github.com/baimoushare/yiwen-translate/releases/latest/download/Yiwen-win-Portable.zip">
       <strong>➡️ 免安裝版（Portable）</strong>
     </a>
   </p>
 
 </div>
 
+> **译文 (Yiwen Translate)** 是 [OverTranslate](https://github.com/asd880921/OverTranslate) 的中文化改造分支（fork），感謝上游專案。改名後的 packId 為 `Yiwen`，與上游更新通道互不相通；從 OverTranslate 遷移請手動安裝。
+
 ## 這是什麼？
 
-**OverTranslate** 是一款專為 Windows 打造的即時螢幕翻譯工具。
+**译文 (Yiwen Translate)** 是一款專為 Windows 打造的即時螢幕翻譯工具。
 
 支援 **截圖翻譯** 與 **即時翻譯**，可將畫面中的文字辨識翻譯後，直接顯示在原本的位置。  
 無論是遊戲、PDF、影片字幕或其他無法直接選取的文字，都能快速翻譯，減少閱讀時來回切換視窗的干擾。  
@@ -206,7 +206,7 @@ OCR 全程於本機 CPU 執行，不會將圖片上傳至外部服務。
 
 ## 支持
 
-本軟體若對你日常或工作使用上有幫助，歡迎透過 [Ko-fi](https://ko-fi.com/honlu) 請我喝杯咖啡 ~ ☕
+本軟體若對你日常或工作使用上有幫助，歡迎透過 [愛發電](https://afdian.com/a/laobai) 支持我 ~ ☕
 
 ---
 
