@@ -8,6 +8,8 @@
     <SolidColorBrush x:Key="AppCardBg"         Color="#252525"/>
     <SolidColorBrush x:Key="AppBorder"         Color="#3C3C3C"/>
     <SolidColorBrush x:Key="AppSubtleBorder"   Color="#303030"/>
+    <!-- 文字翻譯輸入面板專用:比 AppBorder 亮一檔,讓原文/譯文的線框可見但不搶眼 -->
+    <SolidColorBrush x:Key="AppPanelBorder" Color="#565660"/>
 
     <!-- A note the reader is not being asked to act on, laid over AppCardBg. A lift rather than a
          dip: it has to read as a panel on top of the card, and AppAccentSubtle — which this used
@@ -74,14 +76,6 @@
          See DeepLMarkGeometry in SharedStyles. -->
     <SolidColorBrush x:Key="AppDeepLMark"      Color="#FFFFFF"/>
     <SolidColorBrush x:Key="AppOpenAiMark"     Color="#FFFFFF"/>
-
-    <!-- The app's own mark, straight from icons/icon-glyph.svg — on this ground the plate is what
-         the file intends and the brand cyan carries. See LightTheme.xaml for why that theme
-         does not take these values as they are. -->
-    <SolidColorBrush x:Key="AppGlyphPlate"     Color="#0D1117"/>
-    <SolidColorBrush x:Key="AppGlyphField"     Color="#081018"/>
-    <SolidColorBrush x:Key="AppGlyphInk"       Color="#60EFFF"/>
-    <SolidColorBrush x:Key="AppGlyphPlateEdge" Color="#33434E"/>
     <SolidColorBrush x:Key="AppSectionHeader"  Color="#BBBBBB"/>
 
     <!-- Toolbar specific -->

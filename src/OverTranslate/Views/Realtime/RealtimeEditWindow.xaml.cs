@@ -750,7 +750,7 @@ public partial class RealtimeEditWindow : Window
         /// </summary>
         /// <remarks>
         /// Deliberately not Medium, which is what "a little heavier" would normally mean. This text
-        /// is Chinese and falls back to Microsoft JhengHei UI, which ships Regular and Bold and
+        /// is Chinese and falls back to Microsoft YaHei UI, which ships Regular and Bold and
         /// nothing between: measured on this sentence at 13pt, Medium renders identically to Regular
         /// (17.47% ink) because 500 matches back to the 400 face, while SemiBold renders identically
         /// to Bold (21.97%) because 600 matches forward to the 700 one. There is no half step to

@@ -100,8 +100,9 @@ public class SettingsParsingTests
         Assert.Equal("JA", settings.SourceLanguage);
         Assert.Equal("secret", settings.ApiKey);
 
-        Assert.Equal("ZH-HANT", settings.TargetLanguage);
-        Assert.Equal("Ctrl+Alt+A", settings.HotkeyDisplay);
+        Assert.Equal("ZH-HANS", settings.TargetLanguage);
+        Assert.Equal("Ctrl+Alt+D", settings.HotkeyDisplay);
+        Assert.Equal("Ctrl+Alt+A", settings.QuickLookupHotkeyDisplay);
         Assert.False(settings.AutoTranslateAfterSelection);
     }
 
@@ -170,7 +171,7 @@ public class SettingsParsingTests
         var settings = SettingsService.Parse("{}");
 
         Assert.Equal("Dark", settings.Theme);
-        Assert.Equal("Ctrl+Alt+A", settings.HotkeyDisplay);
+        Assert.Equal("Ctrl+Alt+D", settings.HotkeyDisplay);
         Assert.Equal(LanguageData.AutomaticSourceLanguage, settings.SourceLanguage);
     }
 
@@ -318,7 +319,9 @@ public class SettingsParsingTests
     {
         var settings = SettingsService.Parse("""{"Theme":"Light"}""");
 
-        Assert.True(settings.TranslationWindowHotkeyEnabled);
+        // Off by default (v2.2.1): the window is one tray click away, and a fourth global
+        // combination by default is one more thing to collide with something else.
+        Assert.False(settings.TranslationWindowHotkeyEnabled);
         Assert.True(settings.RealtimePauseHotkeyEnabled);
     }
 
@@ -344,5 +347,86 @@ public class SettingsParsingTests
         var settings = SettingsService.Parse("""{"Theme":"Light"}""");
 
         Assert.True(settings.Realtime.GuidanceExpanded);
+    }
+
+    // A file from before reading aloud was configurable: Windows voices become the engine (local,
+    // offline, no key), nothing reads itself aloud until the user says so, and the sliders sit at
+    // each voice's own normal pace and full volume.
+    [Fact]
+    public void MissingTtsSettings_StartWindowsEngineAndSilentAutoSpeak()
+    {
+        var settings = SettingsService.Parse("""{"Theme":"Light"}""");
+
+        Assert.Equal(Models.TtsEngine.Windows, settings.TtsEngine);
+        Assert.Equal("", settings.TtsVoiceId);
+        Assert.Equal(0, settings.TtsRate);
+        Assert.Equal(100, settings.TtsVolume);
+        Assert.Equal(Models.AutoSpeakMode.Off, settings.QuickLookupAutoSpeak);
+        Assert.Equal(Models.AutoSpeakMode.Off, settings.CaptureAutoSpeak);
+    }
+
+    [Fact]
+    public void CustomServices_RoundTrip()
+    {
+        var settings = SettingsService.Parse("""
+            {
+              "CustomServices": [
+                {
+                  "Id": "abc123",
+                  "Name": "DeepSeek",
+                  "BaseUrl": "https://api.deepseek.com/v1",
+                  "ApiKey": "sk-xyz",
+                  "Model": "deepseek-chat",
+                  "TemperatureEnabled": false,
+                  "Temperature": 0.4,
+                  "TimeoutSeconds": 30
+                }
+              ],
+              "ActiveCustomServiceId": "abc123",
+              "Provider": "OpenAI"
+            }
+            """);
+
+        var service = Assert.Single(settings.CustomServices);
+        Assert.Equal("abc123", service.Id);
+        Assert.Equal("DeepSeek", service.Name);
+        Assert.Equal("https://api.deepseek.com/v1", service.BaseUrl);
+        Assert.Equal("sk-xyz", service.ApiKey);
+        Assert.Equal("deepseek-chat", service.Model);
+        Assert.False(service.TemperatureEnabled);
+        Assert.Equal(0.4, service.Temperature);
+        Assert.Equal(30, service.TimeoutSeconds);
+        Assert.Equal("abc123", settings.ActiveCustomServiceId);
+    }
+
+    [Fact]
+    public void MissingCustomServices_StartEmptyAndBuiltin()
+    {
+        var settings = SettingsService.Parse("""{"Theme":"Light"}""");
+
+        Assert.Empty(settings.CustomServices);
+        Assert.Equal("", settings.ActiveCustomServiceId);
+    }
+
+    [Fact]
+    public void TtsSettings_RoundTrip()
+    {
+        var settings = SettingsService.Parse("""
+            {
+              "TtsEngine": "Online",
+              "TtsVoiceId": "some-voice-guid",
+              "TtsRate": -3,
+              "TtsVolume": 70,
+              "QuickLookupAutoSpeak": "Target",
+              "CaptureAutoSpeak": "Both"
+            }
+            """);
+
+        Assert.Equal(Models.TtsEngine.Online, settings.TtsEngine);
+        Assert.Equal("some-voice-guid", settings.TtsVoiceId);
+        Assert.Equal(-3, settings.TtsRate);
+        Assert.Equal(70, settings.TtsVolume);
+        Assert.Equal(Models.AutoSpeakMode.Target, settings.QuickLookupAutoSpeak);
+        Assert.Equal(Models.AutoSpeakMode.Both, settings.CaptureAutoSpeak);
     }
 }

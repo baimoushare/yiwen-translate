@@ -1,0 +1,165 @@
+<UserControl x:Class="OverTranslate.Views.Controls.ModelBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+        <!-- Same contract as SecretBox: the frame lives on the outer Border so the editor, the
+             placeholder and the fetch button read as one input box; the inner editor is stripped
+             of its own chrome. -->
+        <Style x:Key="ModelEditorChrome" TargetType="TextBox">
+            <Setter Property="FontFamily"               Value="{DynamicResource AppFont}"/>
+            <Setter Property="FontSize"                 Value="{StaticResource AppFontSize}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource AppTextPrimary}"/>
+            <Setter Property="Background"               Value="Transparent"/>
+            <Setter Property="BorderThickness"          Value="0"/>
+            <Setter Property="Padding"                  Value="9,0,0,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="FetchButton" TargetType="Button">
+            <Setter Property="Width"      Value="30"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Setter Property="Focusable"  Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root" Background="{TemplateBinding Background}"
+                                CornerRadius="0,6,6,0">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource AppTextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- One row of the models list: a plain button so the whole row, not just the text, picks
+             the model. -->
+        <Style x:Key="ModelRow" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Setter Property="Padding"    Value="10,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root" Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       FontFamily="{DynamicResource AppFont}"
+                                       FontSize="{StaticResource AppFontSize}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background"
+                                        Value="{DynamicResource AppAccentSubtle}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Border x:Name="Root"
+                Background="{DynamicResource AppInputBg}"
+                CornerRadius="6"
+                Height="34">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="BorderBrush"     Value="{DynamicResource AppInputBorder}"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                    <Style.Triggers>
+                        <DataTrigger Value="True"
+                                     Binding="{Binding IsKeyboardFocusWithin,
+                                               RelativeSource={RelativeSource AncestorType=UserControl}}">
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource AppInputFocusBorder}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="ModelInput" Grid.Column="0"
+                         Style="{StaticResource ModelEditorChrome}"
+                         CaretBrush="{DynamicResource AppTextPrimary}"
+                         SelectionBrush="{DynamicResource AppAccent}"
+                         TextChanged="ModelInput_TextChanged"/>
+                <!-- The built-in default shown in place rather than described elsewhere, same
+                     contract as the settings page's own placeholders. -->
+                <TextBlock x:Name="HintBlock" Grid.Column="0"
+                           IsHitTestVisible="False"
+                           FontFamily="{DynamicResource AppFont}"
+                           FontSize="{StaticResource AppFontSize}"
+                           Foreground="{DynamicResource AppTextSecondary}"
+                           Opacity="0.7"
+                           Margin="10,0,10,0"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+
+                <Button x:Name="FetchBtn" Grid.Column="1"
+                        Style="{StaticResource FetchButton}"
+                        ToolTip="{DynamicResource S.Models.FetchTip}"
+                        Click="Fetch_Click">
+                    <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                               FontSize="14"
+                               Text="&#xE896;"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- The listing drops out of the box rather than filling the dialog: it is a picker, and
+             it closes itself the moment the user clicks anywhere else (StaysOpen=False).
+             AllowsTransparency so the card's corner and shadow are not clipped to a rectangle. -->
+        <Popup x:Name="ListPopup"
+               Placement="Bottom"
+               PlacementTarget="{Binding ElementName=Root}"
+               AllowsTransparency="True"
+               StaysOpen="False"
+               PopupAnimation="Fade">
+            <Border Background="{DynamicResource AppCardBg}"
+                    BorderBrush="{DynamicResource AppBorder}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Margin="8,4,8,8"
+                    Width="{Binding ActualWidth, ElementName=Root}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="#000000"/>
+                </Border.Effect>
+                <StackPanel>
+                    <!-- Loading and errors take the list's place: one line either way. -->
+                    <TextBlock x:Name="MessageText"
+                               Visibility="Collapsed"
+                               FontFamily="{DynamicResource AppFont}"
+                               FontSize="{StaticResource AppFontSize}"
+                               Foreground="{DynamicResource AppTextSecondary}"
+                               TextWrapping="Wrap"
+                               Margin="12,10,12,10"/>
+                    <ScrollViewer x:Name="ListHost"
+                                  MaxHeight="236"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="ModelList"/>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>

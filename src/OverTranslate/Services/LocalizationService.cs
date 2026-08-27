@@ -32,14 +32,17 @@ public record UiLanguageOption(string Code, string Display);
 public static class LocalizationService
 {
     public const string TraditionalChinese = "zh-Hant";
+    public const string SimplifiedChinese  = "zh-Hans";
     public const string English             = "en";
 
     private static readonly Uri ZhHantUri = new("Resources/Strings.zh-Hant.xaml", UriKind.Relative);
+    private static readonly Uri ZhHansUri = new("Resources/Strings.zh-Hans.xaml", UriKind.Relative);
     private static readonly Uri EnglishUri = new("Resources/Strings.en.xaml",      UriKind.Relative);
 
     /// <summary>The languages offered in settings, in the order they are listed.</summary>
     public static readonly List<UiLanguageOption> Options =
     [
+        new(SimplifiedChinese,  "简体中文"),
         new(TraditionalChinese, "繁體中文"),
         new(English,            "English"),
     ];
@@ -71,8 +74,9 @@ public static class LocalizationService
     /// The language to start a first-run profile in, from the display language Windows is set to.
     /// </summary>
     /// <remarks>
-    /// Chinese of any flavour gets Traditional — this app has no Simplified UI, and Traditional is
-    /// far closer for a Simplified reader than English is. Everything else gets English.
+    /// Chinese is split by which flavour Windows itself is set to: zh-CN/zh-SG and a bare "zh"
+    /// get Simplified, the Traditional locales (zh-TW/zh-HK/zh-MO) get Traditional. Everything
+    /// else gets English.
     ///
     /// CurrentUICulture, not InstalledUICulture: the latter is the language Windows was installed
     /// in and does not move when the user changes their display language afterwards, so someone
@@ -82,10 +86,18 @@ public static class LocalizationService
     /// </remarks>
     public static string ResolveSystemDefault()
     {
-        var name = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-        return name.Equals("zh", StringComparison.OrdinalIgnoreCase)
+        var culture = CultureInfo.CurrentUICulture;
+        var name = culture.Name;                       // e.g. zh-CN, zh-TW — "" on a bare "zh"
+        var iso  = culture.TwoLetterISOLanguageName;
+
+        if (!iso.Equals("zh", StringComparison.OrdinalIgnoreCase))
+            return English;
+
+        return name.EndsWith("TW", StringComparison.OrdinalIgnoreCase) ||
+               name.EndsWith("HK", StringComparison.OrdinalIgnoreCase) ||
+               name.EndsWith("MO", StringComparison.OrdinalIgnoreCase)
             ? TraditionalChinese
-            : English;
+            : SimplifiedChinese;
     }
 
     public static void Apply(string language)
@@ -98,7 +110,12 @@ public static class LocalizationService
 
         dicts.Add(new ResourceDictionary
         {
-            Source = language == English ? EnglishUri : ZhHantUri
+            Source = language switch
+            {
+                English            => EnglishUri,
+                SimplifiedChinese  => ZhHansUri,
+                _                  => ZhHantUri,
+            }
         });
 
         LanguageChanged?.Invoke(null, EventArgs.Empty);
@@ -146,7 +163,7 @@ public static class LocalizationService
                     var loaded = new ResourceDictionary
                     {
                         Source = new Uri(
-                            "pack://application:,,,/OverTranslate;component/Resources/Strings.zh-Hant.xaml",
+                            "pack://application:,,,/Yiwen;component/Resources/Strings.zh-Hant.xaml",
                             UriKind.Absolute)
                     };
 

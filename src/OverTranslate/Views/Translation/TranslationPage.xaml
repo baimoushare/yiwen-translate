@@ -46,7 +46,7 @@
             <ComboBox x:Name="ProviderBox"
                       Style="{StaticResource ModernComboBox}"
                       Width="180" Height="32"
-                      SelectedValuePath="Provider"
+                      SelectedValuePath="Value"
                       VerticalContentAlignment="Center"/>
         </StackPanel>
 
@@ -54,7 +54,7 @@
         <Border Grid.Row="2"
                 CornerRadius="8"
                 Background="{DynamicResource AppSurfaceBg}"
-                BorderBrush="{DynamicResource AppBorder}"
+                BorderBrush="{DynamicResource AppPanelBorder}"
                 BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -63,6 +63,11 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
+                <!-- 原文与译文之间的竖分隔线,与面板边框同色 -->
+                <Border Grid.Column="1"
+                        Width="1"
+                        Background="{DynamicResource AppPanelBorder}"/>
+
                 <!-- Left pane -->
                 <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
@@ -70,7 +75,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0"
-                            BorderBrush="{DynamicResource AppSubtleBorder}"
+                            BorderBrush="{DynamicResource AppPanelBorder}"
                             BorderThickness="0,0,0,1"
                             Padding="14,6">
                         <!-- Both glyphs come from the icon font, and that is the whole reason the
@@ -94,7 +99,7 @@
                         <DockPanel VerticalAlignment="Center" LastChildFill="False">
                             <TextBlock DockPanel.Dock="Left"
                                        Text="{DynamicResource S.Translation.Source}"
-                                       FontFamily="{StaticResource AppFont}"
+                                       FontFamily="{DynamicResource AppFont}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource AppTextSecondary}"
@@ -145,9 +150,11 @@
                              Background="Transparent"/>
                 </Grid>
 
-                <!-- Splitter: 1px rule with a wider invisible grab area -->
+                <!-- Splitter: 1px rule with a wider invisible grab area. AppPanelBorder rather
+                     than AppSubtleBorder: the subtle one is darker than the pane beside it and the
+                     rule read as missing entirely. -->
                 <Grid Grid.Column="1">
-                    <Rectangle Width="1" Fill="{DynamicResource AppSubtleBorder}"/>
+                    <Rectangle Width="1" Fill="{DynamicResource AppPanelBorder}"/>
                     <GridSplitter Width="5"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Stretch"
@@ -164,7 +171,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0"
-                            BorderBrush="{DynamicResource AppSubtleBorder}"
+                            BorderBrush="{DynamicResource AppPanelBorder}"
                             BorderThickness="0,0,0,1"
                             Padding="14,6">
                         <DockPanel VerticalAlignment="Center">
@@ -178,7 +185,7 @@
                                     ToolTip="{DynamicResource S.Translation.SpeakResult}"
                                     Click="TgtTtsBtn_Click"/>
                             <TextBlock Text="{DynamicResource S.Translation.Result}"
-                                       FontFamily="{StaticResource AppFont}"
+                                       FontFamily="{DynamicResource AppFont}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource AppTextSecondary}"
@@ -258,7 +265,7 @@
             <TextBlock x:Name="StatusText"
                        VerticalAlignment="Center"
                        TextWrapping="Wrap"
-                       FontFamily="{StaticResource AppFont}"
+                       FontFamily="{DynamicResource AppFont}"
                        FontSize="12"
                        Foreground="{DynamicResource AppTextSecondary}"/>
         </DockPanel>

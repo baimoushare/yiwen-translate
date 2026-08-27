@@ -43,6 +43,38 @@ public class TranslationService
     }
 
     /// <summary>
+    /// One provider per user-added custom service, built on first use. The options resolve from the
+    /// settings on every call, so an edit in the service editor takes effect on the next request
+    /// without rebuilding anything here.
+    /// </summary>
+    private readonly Dictionary<string, OpenAiCompatibleProvider> _customProviders = [];
+
+    /// <summary>The custom service the shared preference currently names, or null.</summary>
+    private static CustomTranslatorService? ActiveCustom =>
+        ServiceSelection.ResolveCustom(ServiceSelection.CurrentValue());
+
+    private OpenAiCompatibleProvider CustomProvider(CustomTranslatorService service)
+    {
+        if (_customProviders.TryGetValue(service.Id, out var existing))
+            return existing;
+
+        var created = new OpenAiCompatibleProvider(options: () =>
+        {
+            // Read through to the live service object each call: the settings page edits these
+            // fields in place, and a captured snapshot would keep serving the values as first read.
+            var live = SettingsService.Instance.Current.CustomServices
+                .FirstOrDefault(c => c.Id == service.Id) ?? service;
+            return new OpenAiCompatibleOptions(
+                live.BaseUrl, live.Model, live.ApiKey,
+                live.PromptAuto, live.PromptExplicit,
+                live.TemperatureEnabled, live.Temperature,
+                live.TimeoutSeconds);
+        });
+        _customProviders[service.Id] = created;
+        return created;
+    }
+
+    /// <summary>
     /// The engine a caller that has not said otherwise gets: whatever the user last chose in the
     /// places that share one preference — 設定, 文字翻譯 and the capture toolbar.
     /// </summary>
@@ -70,7 +102,9 @@ public class TranslationService
         _                             => _google2,
     };
 
-    public bool RequiresApiKey => Resilient(Saved).RequiresApiKey;
+    public bool RequiresApiKey => ActiveCustom is not null
+        ? false // the OpenAI-compatible contract works keyless against local servers
+        : Resilient(Saved).RequiresApiKey;
 
     /// <summary>Whether a specific engine needs an API key, for a caller that chose its own.</summary>
     public bool ProviderRequiresApiKey(TranslationProvider provider) => Resilient(provider).RequiresApiKey;
@@ -96,7 +130,10 @@ public class TranslationService
         CancellationToken cancellationToken = default, TranslationProvider? engine = null)
     {
         var chosen   = engine ?? Saved;
-        var provider = resilient ? Resilient(chosen) : Single(chosen);
+        var custom   = engine is null ? ActiveCustom : null;
+        var provider = custom is not null
+            ? CustomProvider(custom)
+            : resilient ? Resilient(chosen) : Single(chosen);
         var result   = await provider.TranslateAsync(blocks, sourceLang, targetLang, apiKey, cancellationToken);
         LastEngineUsage = (provider as ResilientProvider)?.LastUsage;
         return result;

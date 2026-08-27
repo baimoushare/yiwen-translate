@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using OverTranslate.Services;
+using OverTranslate.Models;
 using OverTranslate.Layout;
 
 namespace OverTranslate.Views.Overlay;
@@ -212,6 +213,10 @@ public partial class OverlayWindow : Window
         double canvasWidth = BubbleBackgroundCanvas.ActualWidth > 0 ? BubbleBackgroundCanvas.ActualWidth : Width;
         double canvasHeight = BubbleBackgroundCanvas.ActualHeight > 0 ? BubbleBackgroundCanvas.ActualHeight : Height;
 
+        // Read once per rebuild rather than per block: the calibration only changes through the
+        // settings page, and one capture renders all of its blocks at one calibration.
+        double calibration = SettingsService.Instance.Current.FontCalibration.FontScale();
+
         foreach (var block in blocks)
         {
             if (string.IsNullOrWhiteSpace(block.TranslatedText)) continue;
@@ -248,10 +253,10 @@ public partial class OverlayWindow : Window
 
             bool isSingleLineSource = IsSingleLineSource(block.OriginalText, sourceFontReferenceHeight);
             bool isGroupedMultiLineSource = block.SourceLineBounds is { Count: > 1 };
-            double minFontSize = SourceFontScale.MinFontSize(sourceFontReferenceHeight);
-            double fontSize = SourceFontScale.Calculate(sourceFontReferenceHeight, IsLatinSourceToCjkTarget());
+            double minFontSize = SourceFontScale.MinFontSize(sourceFontReferenceHeight, calibration);
+            double fontSize = SourceFontScale.Calculate(sourceFontReferenceHeight, IsLatinSourceToCjkTarget(), calibration);
             var typeface = new Typeface(
-                new System.Windows.Media.FontFamily("Microsoft JhengHei, Segoe UI, Sans-Serif"),
+                UiFontService.OverlayFamily,
                 FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
             double availableWidth = Math.Max(BubbleMinWidth, canvasWidth - OverlayPadding * 2);
             double targetBorderW = borderW;
@@ -471,7 +476,7 @@ public partial class OverlayWindow : Window
                     // would only mean that a measurement being a pixel out costs the user a word.
                     TextTrimming = TextTrimming.None,
                     VerticalAlignment = VerticalAlignment.Center,
-                    FontFamily = new System.Windows.Media.FontFamily("Microsoft JhengHei, Segoe UI, Sans-Serif"),
+                    FontFamily = UiFontService.OverlayFamily,
                 }
             };
 

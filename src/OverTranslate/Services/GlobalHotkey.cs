@@ -61,6 +61,14 @@ public class GlobalHotkey : IDisposable
         _registered = RegisterHotKey(hwnd, _id, modifiers | MOD_NOREPEAT, virtualKey);
     }
 
+    /// <summary>
+    /// Whether the last <see cref="Register"/> actually claimed the trigger. RegisterHotKey fails
+    /// for a combination another program already owns — QQ's screenshot on Ctrl+Alt+Q being the
+    /// one that shipped a default of ours — and it fails silently: nothing reaches the log unless
+    /// the caller looks here and says so.
+    /// </summary>
+    public bool Registered => _registered;
+
     public void Unregister()
     {
         if (_registered)

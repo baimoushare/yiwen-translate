@@ -27,6 +27,21 @@ public class DiagnosticRedactionTests
     }
 
     [Fact]
+    public void CustomServiceKeysInsideArrays_AreReplacedToo()
+    {
+        // CustomServices is a list, and each entry carries an ApiKey. A list is neither object nor
+        // value to the walker, so without the array branch every key in it ships in the bundle.
+        var json = DiagnosticBundleService.RedactSettings(
+            """{"CustomServices":[{"Name":"DeepSeek","ApiKey":"sk-abc123","BaseUrl":"https://api.deepseek.com/v1"},{"Name":"本地","ApiKey":""}]}""");
+
+        var services = JsonNode.Parse(json)!.AsObject()["CustomServices"]!.AsArray();
+
+        Assert.Equal("<redacted:9>", (string?)services[0]["ApiKey"]);
+        Assert.Equal("", (string?)services[1]["ApiKey"]);
+        Assert.Equal("DeepSeek", (string?)services[0]["Name"]);
+    }
+
+    [Fact]
     public void UnsetKey_StaysEmptyRatherThanLookingSet()
     {
         var json = DiagnosticBundleService.RedactSettings("""{"ApiKey":""}""");

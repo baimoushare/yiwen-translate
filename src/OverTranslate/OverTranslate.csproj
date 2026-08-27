@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -29,7 +29,12 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>icons\icon_256.ico</ApplicationIcon>
     <StartupObject>OverTranslate.App</StartupObject>
-    <Version>2.1.0</Version>
+    <Version>0.0.2</Version>
+    <AssemblyName>Yiwen</AssemblyName>
+    <!-- 改名定稿「译文 / Yiwen」：exe 文件名用 Yiwen.exe（AssemblyName），但命名空间与嵌入式
+         资源命名保留 OverTranslate（fork 上游，GPL 衍生关系清晰，diff 最小）。RootNamespace
+         必须显式锁定，否则随 AssemblyName 变化会让图标等嵌入式资源的逻辑名全部失效。 -->
+    <RootNamespace>OverTranslate</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <!-- WFAC010 tells WinForms apps to declare DPI awareness through Application.SetHighDpiMode.
          This is a WPF app that only references WinForms types; ApplicationConfiguration.Initialize
@@ -53,12 +58,15 @@
     <EmbeddedResource Include="icons\icon_32.ico" />
     <EmbeddedResource Include="icons\icon_256.ico" />
     <Resource Include="icons\capture_crosshair.cur" />
+    <Resource Include="icons\icon_brand.png" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="GTranslate" Version="2.3.1" />
     <PackageReference Include="NLog" Version="5.0.4" />
     <PackageReference Include="RapidOcrNet" Version="3.0.0" ExcludeAssets="build" />
+    <!-- Windows 系统 TTS(SpeechSynthesizer):本地、离线、无密钥,是朗读的默认引擎。 -->
+    <PackageReference Include="System.Speech" Version="8.0.0" />
     <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 

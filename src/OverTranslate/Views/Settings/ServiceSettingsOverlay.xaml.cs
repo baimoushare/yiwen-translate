@@ -84,7 +84,7 @@ public partial class ServiceSettingsOverlay : UserControl
             {
                 s.OpenAiBaseUrl = OpenAiBaseUrlBox.Text.Trim();
                 s.OpenAiApiKey = OpenAiApiKeyBox.Secret.Trim();
-                s.OpenAiModel = OpenAiModelBox.Text.Trim();
+                s.OpenAiModel = OpenAiModelField.Text.Trim();
                 s.OpenAiTemperature = ReadTemperature();
             });
         };
@@ -95,6 +95,13 @@ public partial class ServiceSettingsOverlay : UserControl
             _promptDebounce.Stop();
             PersistPrompt();
         };
+
+        // The model listing answers the values on this form, saved or not; the built-in slot has
+        // no timeout field, so the provider's default of 60 is what a test would also run under.
+        OpenAiModelField.Source = () => (
+            OpenAiBaseUrlBox.Text.Trim(),
+            OpenAiApiKeyBox.Secret,
+            60);
     }
 
     // ── Open / close ─────────────────────────────────────────────────────────
@@ -200,6 +207,11 @@ public partial class ServiceSettingsOverlay : UserControl
             DeepLPanel.Visibility = deepL ? Visibility.Visible : Visibility.Collapsed;
             OpenAiPanel.Visibility = deepL ? Visibility.Collapsed : Visibility.Visible;
 
+            // DeepL's key cannot be probed the way an OpenAI-compatible endpoint can, so the test
+            // button belongs to the OpenAI panel only.
+            OpenAiTestBtn.Visibility = deepL ? Visibility.Collapsed : Visibility.Visible;
+            OpenAiTestResult.Visibility = deepL ? Visibility.Collapsed : Visibility.Visible;
+
             // The card is sized for the wider of the two panels, and DeepL is one field.
             Card.Width = deepL ? 460 : 620;
 
@@ -207,7 +219,7 @@ public partial class ServiceSettingsOverlay : UserControl
 
             OpenAiBaseUrlBox.Text = s.OpenAiBaseUrl;
             OpenAiApiKeyBox.Secret = s.OpenAiApiKey;
-            OpenAiModelBox.Text = s.OpenAiModel;
+            OpenAiModelField.Text = s.OpenAiModel;
             TemperatureEnabledCheckBox.IsChecked = s.OpenAiTemperatureEnabled;
             TemperatureBox.Text = FormatTemperature(s.OpenAiTemperature);
             LoadPromptEditor(s);
@@ -252,7 +264,7 @@ public partial class ServiceSettingsOverlay : UserControl
             {
                 s.OpenAiBaseUrl = OpenAiBaseUrlBox.Text.Trim();
                 s.OpenAiApiKey = OpenAiApiKeyBox.Secret.Trim();
-                s.OpenAiModel = OpenAiModelBox.Text.Trim();
+                s.OpenAiModel = OpenAiModelField.Text.Trim();
                 s.OpenAiTemperature = ReadTemperature();
             });
         }
@@ -291,9 +303,65 @@ public partial class ServiceSettingsOverlay : UserControl
         OpenAiBaseUrlPlaceholder.Visibility =
             OpenAiBaseUrlBox.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        OpenAiModelPlaceholder.Text = OpenAiCompatibleProvider.DefaultModel;
-        OpenAiModelPlaceholder.Visibility =
-            OpenAiModelBox.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        // The model box shows this itself while empty; the placeholder text is handed over so it
+        // follows a change of the built-in default without this panel knowing the control's
+        // internals.
+        OpenAiModelField.Placeholder = OpenAiCompatibleProvider.DefaultModel;
+    }
+
+    /// <summary>
+    /// The model box's own change event: same handling as the other OpenAI fields, minus the
+    /// placeholder work the control does internally.
+    /// </summary>
+    private void OpenAiModel_ModelChanged(object? sender, EventArgs e)
+    {
+        if (_loading) return;
+        _openAiSettingsDebounce.Stop();
+        _openAiSettingsDebounce.Start();
+    }
+
+    // ── 连通测试 ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Sends one real request from the values on the form, saved or not — a mis-typed key is
+    /// caught here rather than at the next screenshot translation.
+    /// </summary>
+    private async void OpenAiTest_Click(object sender, RoutedEventArgs e)
+    {
+        var s = SettingsService.Instance.Current;
+
+        OpenAiTestBtn.IsEnabled = false;
+        OpenAiTestResult.Text = LocalizationService.Get("S.Custom.Testing");
+        OpenAiTestResult.SetResourceReference(TextBlock.ForegroundProperty, "AppTextSecondary");
+
+        try
+        {
+            var options = new OpenAiCompatibleOptions(
+                OpenAiBaseUrlBox.Text.Trim(),
+                OpenAiModelField.Text.Trim(),
+                OpenAiApiKeyBox.Secret,
+                s.OpenAiPromptAuto,
+                s.OpenAiPromptExplicit,
+                s.OpenAiTemperatureEnabled,
+                ReadTemperature());
+
+            var (ok, detail) = await OpenAiCompatibleProvider.TestConnectionAsync(options);
+            OpenAiTestResult.Text = LocalizationService.Format(
+                ok ? "S.Custom.TestOk" : "S.Custom.TestFail", detail);
+            OpenAiTestResult.SetResourceReference(
+                TextBlock.ForegroundProperty, ok ? "AppSuccess" : "AppError");
+            OpenAiTestResult.ToolTip = detail;
+        }
+        catch (Exception ex)
+        {
+            OpenAiTestResult.Text = LocalizationService.Format("S.Custom.TestFail", ex.Message);
+            OpenAiTestResult.SetResourceReference(TextBlock.ForegroundProperty, "AppError");
+            OpenAiTestResult.ToolTip = ex.Message;
+        }
+        finally
+        {
+            OpenAiTestBtn.IsEnabled = true;
+        }
     }
 
     private void OpenAiSecret_SecretChanged(object? sender, EventArgs e)

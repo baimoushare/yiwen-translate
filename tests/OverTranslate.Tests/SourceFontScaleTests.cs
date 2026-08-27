@@ -1,4 +1,5 @@
 using OverTranslate.Layout;
+using OverTranslate.Models;
 using Xunit;
 
 namespace OverTranslate.Tests;
@@ -77,5 +78,49 @@ public class SourceFontScaleTests
         Assert.True(
             Math.Abs(before - after) / before < 0.05,
             $"font changed from {before:F2} to {after:F2} for a 0.5px shift in the source height");
+    }
+    // ── 译文字号校准 ──
+    // The calibration is a plain multiplier on the automatic result: every guarantee above —
+    // continuity across the blend band, the Latin-to-CJK boost, the floors — must survive under
+    // it, and Standard must reproduce the uncalibrated numbers exactly.
+    [Fact]
+    public void Calibration_IsAPlainMultiplierOnTheAutomaticResult()
+    {
+        foreach (var (calibration, factor) in new[]
+                 {
+                     (OverlayFontCalibration.Compact, 0.85),
+                     (OverlayFontCalibration.Standard, 1.0),
+                     (OverlayFontCalibration.Large,   1.15),
+                 })
+        {
+            Assert.Equal(factor, calibration.FontScale(), 3);
+
+            for (var height = 8.0; height <= 30.0; height += 0.5)
+                foreach (var latin in new[] { false, true })
+                {
+                    Assert.Equal(
+                        SourceFontScale.Calculate(height, latin) * factor,
+                        SourceFontScale.Calculate(height, latin, calibration.FontScale()), 3);
+
+                    Assert.Equal(
+                        SourceFontScale.MinFontSize(height) * factor,
+                        SourceFontScale.MinFontSize(height, calibration.FontScale()), 3);
+                }
+        }
+    }
+
+    [Fact]
+    public void Calibration_PreservesContinuityAcrossTheBlendBand()
+    {
+        foreach (var factor in new[] { 0.85, 1.15 })
+            for (var height = 8.0; height <= 30.0; height += 0.1)
+            {
+                var here = SourceFontScale.Calculate(height, latinSourceToCjkTarget: false, calibration: factor);
+                var next = SourceFontScale.Calculate(height + 0.1, latinSourceToCjkTarget: false, calibration: factor);
+
+                Assert.True(
+                    next - here <= 0.25,
+                    $"font jumped {here:F2} to {next:F2} between heights {height:F1} and {height + 0.1:F1} at factor {factor}");
+            }
     }
 }

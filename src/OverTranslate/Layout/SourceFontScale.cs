@@ -45,8 +45,13 @@ public static class SourceFontScale
     /// available. Small source text has the higher floor: it is already near the readability limit,
     /// so it is the text that can least afford to give any size back.
     /// </summary>
-    public static double MinFontSize(double sourceHeight) =>
-        Blend(sourceHeight, SmallMinFontSize, LargeMinFontSize);
+    /// <param name="calibration">
+    /// The user's size nudge, 1.0 for none — see <c>OverlayFontCalibrationExtensions.FontScale</c>.
+    /// The floor scales with it, because a reader who asked for smaller text has also answered how
+    /// small "too small" is.
+    /// </param>
+    public static double MinFontSize(double sourceHeight, double calibration = 1.0) =>
+        Blend(sourceHeight, SmallMinFontSize, LargeMinFontSize) * calibration;
 
     /// <summary>
     /// Font size for a source block of <paramref name="sourceHeight"/>, before any fitting to the
@@ -55,7 +60,12 @@ public static class SourceFontScale
     /// <param name="latinSourceToCjkTarget">
     /// True when a Latin source is being rendered in a CJK target script.
     /// </param>
-    public static double Calculate(double sourceHeight, bool latinSourceToCjkTarget)
+    /// <param name="calibration">
+    /// The user's size nudge, 1.0 for none. Applied after the readability floor rather than to the
+    /// height, so it stays a plain multiplier on the final result: the automatic curve — including
+    /// its blend band and its floors — keeps its shape, and every size simply moves with it.
+    /// </param>
+    public static double Calculate(double sourceHeight, bool latinSourceToCjkTarget, double calibration = 1.0)
     {
         var multiplier = Blend(sourceHeight, SmallMultiplier, LargeMultiplier);
         var fontSize = sourceHeight * multiplier;
@@ -74,7 +84,7 @@ public static class SourceFontScale
         // SmallMinFontSize rather than MinFontSize(sourceHeight): that one falls with height, and
         // blending it in here would cause the same dip. Only the small end's floor ever binds on
         // this path anyway — height * LargeMultiplier clears LargeMinFontSize from 12.3px up.
-        return Math.Max(SmallMinFontSize, fontSize);
+        return Math.Max(SmallMinFontSize, fontSize) * calibration;
     }
 
     private static double Blend(double sourceHeight, double atSmall, double atLarge)

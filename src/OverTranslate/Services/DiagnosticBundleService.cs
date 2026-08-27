@@ -302,6 +302,14 @@ public static class DiagnosticBundleService
                     RedactInPlace(nested);
                     continue;
 
+                // CustomServices is a list of objects, and each one carries an ApiKey: an array is
+                // neither an object nor a value, so without this branch the walk steps over the
+                // whole list and every key in it ships in the bundle.
+                case JsonArray array:
+                    foreach (var element in array.OfType<JsonObject>())
+                        RedactInPlace(element);
+                    continue;
+
                 case JsonValue value when value.TryGetValue(out string? text):
                     if (IsSecret(name))
                         obj[name] = Mask(text);

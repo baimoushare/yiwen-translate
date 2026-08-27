@@ -304,7 +304,7 @@ public partial class QuickLookupWindow : Window
         _suppressAuto = true;
         LocalizationService.BindLocalizedItems(SrcLangBox, LanguageData.SourceLanguages);
         LocalizationService.BindLocalizedItems(TgtLangBox, LanguageData.TargetLanguages);
-        LocalizationService.BindLocalizedItems(ProviderBox, LanguageData.Providers);
+        LocalizationService.BindLocalizedItems(ProviderBox, ServiceSelection.Options());
         LoadSharedPreferences();
         _suppressAuto = false;
 
@@ -925,6 +925,10 @@ public partial class QuickLookupWindow : Window
             TranslatedText.Text = results.FirstOrDefault()?.TranslatedText ?? "";
             StatusText.Visibility = Visibility.Collapsed;
             ShowResult();
+
+            // After the result is on screen, so reading aloud never races the translation and a
+            // failure inside it never takes the result away. Fire-and-forget by design.
+            _ = AutoSpeakResultAsync(settings.QuickLookupAutoSpeak, text, srcLang, tgtLang);
         }
         catch (Exception ex)
         {
@@ -990,6 +994,48 @@ public partial class QuickLookupWindow : Window
     }
 
     // ══════════════════════════ Reading aloud ══════════════════════════
+
+    /// <summary>What the last auto-speak read aloud, so the same result landing twice stays quiet.</summary>
+    private string _lastAutoSpoken = "";
+
+    /// <summary>
+    /// Reads a finished result aloud when the user asked for that, and only the first time it
+    /// arrives.
+    /// </summary>
+    /// <remarks>
+    /// The guards are the ones the plan named: an empty or failed translation never speaks (the
+    /// caller only reaches here on success, and the text is checked anyway), and a re-trigger on
+    /// the same selection — which re-translates and lands here a second time — does not read the
+    /// same sentence twice. Speaking the original needs a language for it: the picker's choice
+    /// when there is one, else what the engine detected on the way past.
+    /// </remarks>
+    private async Task AutoSpeakResultAsync(AutoSpeakMode mode, string source, string srcLang, string tgtLang)
+    {
+        var target = TranslatedText.Text.Trim();
+        if (mode == AutoSpeakMode.Off || target.Length == 0) return;
+        if (_tts.IsActive && target == _lastAutoSpoken) return;
+        _lastAutoSpoken = target;
+
+        var sourceText = source.Trim();
+        var sourceLang = !LanguageData.IsAutomaticSource(srcLang)
+            ? srcLang
+            : _detectedLang;
+
+        try
+        {
+            await TtsService.SpeakTranslationAsync(
+                _tts, mode,
+                sourceText, sourceLang,
+                target, tgtLang);
+        }
+        catch (Exception ex)
+        {
+            // Auto-speak is a convenience bolted onto a result that is already on screen; the
+            // click-path speaks have their own error surface (a balloon on the toolbar), and this
+            // one gets a log line rather than interrupting the reading with a dialog.
+            Log.Warn(ex, "Quick lookup auto-speak failed");
+        }
+    }
 
     /// <summary>
     /// Settles 朗讀原文 against whether there is a language to read the original in.
@@ -1082,13 +1128,13 @@ public partial class QuickLookupWindow : Window
     /// window, which is a place the pointer then has to not be for the popup to survive — and the
     /// message would outlive the window it was about.
     /// </remarks>
-    private void CopyBtn_Click(object sender, RoutedEventArgs e)
+    private async void CopyBtn_Click(object sender, RoutedEventArgs e)
     {
         if (TranslatedText.Text.Length == 0) return;
 
         try
         {
-            Clipboard.SetText(TranslatedText.Text);
+            await Services.ClipboardRetry.SetTextAsync(TranslatedText.Text);
         }
         catch (Exception ex)
         {
@@ -1165,7 +1211,7 @@ public partial class QuickLookupWindow : Window
         // The shell takes the foreground, which would close this window a moment later anyway —
         // doing it first means the popup does not flash behind the window that replaced it.
         BeginClose();
-        ShellWindow.ShowOrActivate(ShellPage.Settings);
+        ShellWindow.ShowOrActivate(ShellPage.SettingsGeneral);
     }
 
     // ══════════════════════════ Shared preferences ══════════════════════════
@@ -1176,7 +1222,7 @@ public partial class QuickLookupWindow : Window
 
         SrcLangBox.SelectedValue = LanguageData.GetValidSourceCode(settings.SourceLanguage);
         TgtLangBox.SelectedValue = LanguageData.GetValidTargetCode(settings.TargetLanguage);
-        ProviderBox.SelectedValue = settings.Provider;
+        ProviderBox.SelectedValue = ServiceSelection.CurrentValue();
         if (ProviderBox.SelectedValue is null) ProviderBox.SelectedIndex = 0;
     }
 
@@ -1275,9 +1321,9 @@ public partial class QuickLookupWindow : Window
 
     private void ProviderBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_suppressAuto || ProviderBox.SelectedValue is not TranslationProvider provider) return;
+        if (_suppressAuto || ProviderBox.SelectedValue as string is not { } service) return;
 
-        SettingsService.Instance.Current.Provider = provider;
+        ServiceSelection.ApplyValue(service);
         SettingsService.Instance.Save();
 
         // The engine's answer belongs to the engine that gave it, and the new one may not answer at

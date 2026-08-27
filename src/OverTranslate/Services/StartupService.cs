@@ -5,7 +5,7 @@ namespace OverTranslate.Services;
 public static class StartupService
 {
     private const string RunKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-    private const string AppName = "OverTranslate";
+    private const string AppName = "Yiwen";
 
     public static bool IsEnabled
     {

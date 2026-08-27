@@ -1,0 +1,207 @@
+<UserControl x:Class="OverTranslate.Views.Settings.CustomServiceOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:OverTranslate.Views.Controls"
+             Visibility="Collapsed"
+             Focusable="True">
+
+    <Grid x:Name="Scrim" Background="#C0000000">
+        <Border x:Name="Card"
+                Style="{StaticResource CardBorder}"
+                Background="{DynamicResource AppCardBg}"
+                MaxWidth="520" MaxHeight="640"
+                VerticalAlignment="Center" HorizontalAlignment="Center"
+                Padding="26,22">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.45"/>
+            </Border.Effect>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- ── 标题行 ── -->
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="TitleText"
+                               Style="{StaticResource PageTitle}"
+                               FontSize="19"/>
+                    <Button Grid.Column="1"
+                            x:Name="CloseBtn"
+                            Style="{StaticResource FlatButton}"
+                            Content="{DynamicResource S.Common.Close}"
+                            Click="Close_Click"/>
+                </Grid>
+
+                <!-- ── 内容 ── -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- 添加模式:模板快选 -->
+                        <StackPanel x:Name="TemplatePanel" Margin="0,0,0,14">
+                            <TextBlock Text="{DynamicResource S.Custom.TemplateHint}"
+                                       Style="{StaticResource FieldLabel}"
+                                       Margin="0,0,0,8"/>
+                            <WrapPanel x:Name="TemplateList"/>
+                        </StackPanel>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="CustomLabel"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource S.Custom.Name}"
+                                       Style="{StaticResource FieldLabel}" Margin="0,0,14,9"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameBox"
+                                     Style="{StaticResource ModernTextBox}" Margin="0,0,0,9"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{DynamicResource S.Settings.ApiBaseUrl}"
+                                       Style="{StaticResource FieldLabel}" Margin="0,0,14,9"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="BaseUrlBox"
+                                     Style="{StaticResource ModernTextBox}" Margin="0,0,0,9"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{DynamicResource S.Common.ApiKey}"
+                                       Style="{StaticResource FieldLabel}" Margin="0,0,14,9"/>
+                            <controls:SecretBox Grid.Row="2" Grid.Column="1" x:Name="ApiKeyBox"
+                                                Margin="0,0,0,9"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="{DynamicResource S.Settings.ModelName}"
+                                       Style="{StaticResource FieldLabel}" Margin="0,0,14,9"/>
+                            <!-- 模型名支持从端点拉取官方列表点选，免去手敲完整名称 -->
+                            <controls:ModelBox Grid.Row="3" Grid.Column="1" x:Name="ModelField"
+                                                Margin="0,0,0,9"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="{DynamicResource S.Custom.Timeout}"
+                                       Style="{StaticResource FieldLabel}" Margin="0,0,14,9"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" x:Name="TimeoutBox"
+                                     Style="{StaticResource ModernTextBox}" Margin="0,0,0,9"/>
+
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Temperature"
+                                       Style="{StaticResource FieldLabel}" Margin="0,0,14,9"/>
+                            <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,9">
+                                <CheckBox x:Name="TemperatureEnabledBox"
+                                          Style="{StaticResource ModernCheckBox}"
+                                          VerticalAlignment="Center"/>
+                                <TextBox x:Name="TemperatureBox"
+                                         Style="{StaticResource ModernTextBox}"
+                                         Width="72" Margin="10,0,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 提示词带“恢复默认”：两个框都预填内置默认模板，改坏了一键回来 -->
+                        <Grid Margin="0,4,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{DynamicResource S.Settings.PromptAuto}"
+                                       Style="{StaticResource FieldLabel}" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" x:Name="PromptAutoReset"
+                                    Style="{StaticResource FlatButton}"
+                                    Background="Transparent" BorderBrush="Transparent"
+                                    Width="26" Height="24" Padding="0"
+                                    Foreground="{DynamicResource AppTextSecondary}"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="12"
+                                    Content="&#xE72C;"
+                                    ToolTip="{DynamicResource S.Custom.ResetPrompt}"
+                                    Click="PromptAutoReset_Click"/>
+                        </Grid>
+                        <TextBox x:Name="PromptAutoBox"
+                                 Style="{StaticResource ModernTextBox}"
+                                 TextWrapping="Wrap" AcceptsReturn="True" Height="64"
+                                 Margin="0,0,0,10"/>
+
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{DynamicResource S.Settings.PromptExplicit}"
+                                       Style="{StaticResource FieldLabel}" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" x:Name="PromptExplicitReset"
+                                    Style="{StaticResource FlatButton}"
+                                    Background="Transparent" BorderBrush="Transparent"
+                                    Width="26" Height="24" Padding="0"
+                                    Foreground="{DynamicResource AppTextSecondary}"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="12"
+                                    Content="&#xE72C;"
+                                    ToolTip="{DynamicResource S.Custom.ResetPrompt}"
+                                    Click="PromptExplicitReset_Click"/>
+                        </Grid>
+                        <TextBox x:Name="PromptExplicitBox"
+                                 Style="{StaticResource ModernTextBox}"
+                                 TextWrapping="Wrap" AcceptsReturn="True" Height="64"
+                                 Margin="0,0,0,4"/>
+
+                        <TextBlock Text="{DynamicResource S.Custom.PromptParamsHint}"
+                                   Style="{StaticResource FieldHint}" Margin="0,2,0,4"/>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- ── 操作行 ── -->
+                <Grid Grid.Row="2" Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 测试用当前表单值，不必先保存：配错了当场知道，而不是到下一次截图翻译才失败 -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="TestBtn"
+                                Style="{StaticResource FlatButton}"
+                                Click="Test_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE945;"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontSize="13"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,7,0"/>
+                                <TextBlock Text="{DynamicResource S.Custom.Test}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <!-- SetResourceReference 换色，主题切换后仍然跟随 -->
+                        <TextBlock x:Name="TestResult"
+                                   VerticalAlignment="Center"
+                                   Margin="10,0,0,0"
+                                   FontFamily="{DynamicResource AppFont}"
+                                   FontSize="12"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxWidth="220"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <Button x:Name="DeleteBtn"
+                                Style="{StaticResource FlatButton}"
+                                Content="{DynamicResource S.Custom.Delete}"
+                                Visibility="Collapsed"
+                                Margin="0,0,8,0"
+                                Click="Delete_Click"/>
+                        <Button x:Name="SaveBtn"
+                                Style="{StaticResource FlatButton}"
+                                FontWeight="SemiBold"
+                                Content="{DynamicResource S.Custom.Save}"
+                                Click="Save_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

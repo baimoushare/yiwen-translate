@@ -10,11 +10,11 @@ public class SettingsService
 {
     private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-    // Velopack installs each version into ...\OverTranslate\current\ and replaces that entire folder
+    // Velopack installs each version into ...\Yiwen\current\ and replaces that entire folder
     // on update. Settings used to live in BaseDirectory, i.e. inside current\, so every update wiped
     // them and the app came back up on factory defaults. Roaming AppData sits outside the install.
     private static readonly string SettingsDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "OverTranslate");
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Yiwen");
 
     private static readonly string SettingsPath = Path.Combine(SettingsDirectory, "appsettings.json");
 
@@ -29,6 +29,11 @@ public class SettingsService
     // user's settings, so read them once on the way to the new location.
     private static readonly string LegacySettingsPath = Path.Combine(
         AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+
+    // 改名前的设置目录（OverTranslate 时代）。首次运行时仍读到这里的设置，并随 Load() 里的
+    // Save() 自动落到新目录 %APPDATA%\Yiwen，旧目录原样保留（不删，便于回退）。
+    private static readonly string PreRenameSettingsPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "OverTranslate", "appsettings.json");
 
     private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
 
@@ -171,7 +176,7 @@ public class SettingsService
 
     private static string? ReadFirstAvailable()
     {
-        foreach (var path in new[] { SettingsPath, LegacySettingsPath })
+        foreach (var path in new[] { SettingsPath, PreRenameSettingsPath, LegacySettingsPath })
         {
             if (!File.Exists(path))
                 continue;

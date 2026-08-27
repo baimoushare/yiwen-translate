@@ -15,7 +15,7 @@ public partial class App
 {
     private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-    private const string ActivateEventName = "OverTranslate_Activate_9F3C7B2E";
+    private const string ActivateEventName = "Yiwen_Activate_9F3C7B2E";
 
     private EventWaitHandle? _activateEvent;
 
@@ -76,6 +76,10 @@ public partial class App
         LogLevelService.Apply(SettingsService.Instance.Current.VerboseLogging);
 
         ThemeService.Apply(SettingsService.Instance.Current.Theme);
+
+        // 字体与主题同一时机套用：默认跟随系统，用户选过字体（如霞鹜文楷）则在任何
+        // 窗口创建之前替换资源键，界面与译文叠加从此统一走它。
+        UiFontService.Apply(SettingsService.Instance.Current.UiFontFamily);
 
         // Before any window is built, so nothing is ever constructed against the wrong dictionary.
         LocalizationService.Apply(LocalizationService.Current);

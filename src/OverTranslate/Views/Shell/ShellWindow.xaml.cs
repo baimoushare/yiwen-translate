@@ -12,6 +12,8 @@ using OverTranslate.Views.Translation;
 // UseWindowsForms puts System.Windows.Forms in the implicit usings, so these names collide
 using Point = System.Windows.Point;
 using Size = System.Windows.Size;
+using MouseButtonEventArgs = System.Windows.Input.MouseButtonEventArgs;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace OverTranslate.Views.Shell;
 
@@ -19,7 +21,12 @@ public enum ShellPage
 {
     Translation,
     Realtime,
-    Settings
+    // The four settings groups are their own destinations: the rail lists them directly and the
+    // settings page itself has no second layer of navigation.
+    SettingsGeneral,
+    SettingsHotkeys,
+    SettingsServices,
+    SettingsTts
 }
 
 /// <summary>
@@ -121,28 +128,21 @@ public partial class ShellWindow : Window
 
         var icon = AppIconService.CreateWindowIcon();
         Icon = icon;
-        BrandIcon.Source = icon;
         TitleIcon.Source = icon;
-        VersionText.Text = $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0"}";
 
         _instance = this;
-        MatchBrandIconToText();
         RefreshHotkeyHints();
 
         // Subscribed once here rather than per open, so the handler is not stacked up by a user who
         // opens the service panel more than once.
         ServiceSettings.Closed += (_, _) => _settingsPage.RefreshServiceTiles();
+        CustomService.Closed += (_, _) => _settingsPage.RefreshServiceTiles();
 
         // Subscribed rather than refreshed on show: a session ending brings this window back with
         // Show(), not through ShowOrActivate, so nothing else would clear the disabled state and
         // the button would stay greyed out for as long as the shell stayed open.
         Realtime.RealtimeSessionController.Instance.StateChanged += OnRealtimeStateChanged;
         RefreshQuickToolAvailability();
-
-        // Same reasoning, and one more: the periodic check runs whether or not this window exists,
-        // so the rail has to be able to gain the row while the user is sitting in front of it.
-        UpdateNotifier.AvailabilityChanged += OnUpdateAvailabilityChanged;
-        RefreshUpdateAvailability();
 
         // The rail's composed strings — the update row's version and the 快速工具 rows'
         // blocked-by-realtime tooltips — are set from code, so DynamicResource does not reach them
@@ -177,6 +177,9 @@ public partial class ShellWindow : Window
 
         if (_lastWindowState == WindowState.Maximized) WindowState = WindowState.Maximized;
 
+        if (_lastRailDragWidth > 0)
+            SetRailWidth(_lastRailDragWidth);
+
         _railCollapsed = _lastRailCollapsed;
         SetRailWidth(_railCollapsed ? 0 : RailWidth);
         RefreshSidebarToggle();
@@ -189,32 +192,9 @@ public partial class ShellWindow : Window
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         RefreshQuickToolAvailability();
-        RefreshUpdateAvailability();
         RefreshSidebarToggle();
-    }
-
-    /// <summary>
-    /// Caps the brand mark to the height of the wordmark and version beside it.
-    /// </summary>
-    /// <remarks>
-    /// A size-changed handler rather than a binding on ActualHeight. The grid's first column is
-    /// Auto, so its width comes from the image's desired width, which under a binding is still the
-    /// source bitmap's own until the binding has resolved — by which point the column has claimed
-    /// the whole rail and squeezed out the text the height was to be measured from. Measuring after
-    /// the text has been laid out has no such ordering to lose.
-    ///
-    /// Only on a height change. Setting the image's width resizes the Auto column, which resizes
-    /// the starred column beside it, which raises this event again — reacting to that would loop.
-    /// The badge is deliberately not part of the measurement: it is on its own row, so a release
-    /// appearing never resizes the mark.
-    /// </remarks>
-    private void MatchBrandIconToText()
-    {
-        BrandText.SizeChanged += (_, e) =>
-        {
-            if (!e.HeightChanged) return;
-            BrandIcon.Width = BrandIcon.Height = e.NewSize.Height;
-        };
+        // 功能名换了语言宽度就变，快捷键的“放得下吗”要重算。
+        ScheduleQuickToolHotkeyFit();
     }
 
     /// <summary>
@@ -240,6 +220,64 @@ public partial class ShellWindow : Window
             settings.QuickLookupHotkeyEnabled && !string.IsNullOrWhiteSpace(settings.QuickLookupHotkeyDisplay)
                 ? settings.QuickLookupHotkeyDisplay
                 : "";
+
+        ScheduleQuickToolHotkeyFit();
+    }
+
+    // ── 快速工具行的“放不下先藏快捷键” ──────────────────────────────────────
+    // 侧栏可拖宽（200~420）：两行都是“图标 + 功能名 + 快捷键”，空间不足时优先整段藏起
+    // 快捷键、功能名最后才轮到省略号——名字说功能，按键只是提醒。DockPanel 自身做不到
+    // 这种顺序（dock 元素不压缩，被压的永远是 Fill 的功能名），所以由代码按实测文本
+    // 宽度折叠。
+
+    private void QuickToolRow_SizeChanged(object sender, SizeChangedEventArgs e) =>
+        UpdateQuickToolHotkeyVisibility();
+
+    /// <summary>等本轮布局完成后再量宽：文本刚填上时行还没量，ActualWidth 是 0。</summary>
+    private void ScheduleQuickToolHotkeyFit() =>
+        Dispatcher.BeginInvoke(UpdateQuickToolHotkeyVisibility,
+            System.Windows.Threading.DispatcherPriority.Loaded);
+
+    private void UpdateQuickToolHotkeyVisibility()
+    {
+        FitQuickToolHotkey(CaptureHotkeyText,     CaptureLabel);
+        FitQuickToolHotkey(QuickLookupHotkeyText, QuickLookupLabel);
+    }
+
+    /// <summary>行内容宽放得下“图标+功能名+快捷键”才显示快捷键；否则整段折叠。</summary>
+    private static void FitQuickToolHotkey(TextBlock hotkey, TextBlock label)
+    {
+        if (hotkey.Parent is not DockPanel row) return;
+
+        // RailQuickToolIcon：30 宽 + 右 margin 10；快捷键自身左 margin 8。取自样式常量。
+        const double IconAndGap = 40;
+        const double HotkeyGap  = 8;
+
+        var hotkeyWidth = IdealTextWidth(hotkey);
+        var need        = IconAndGap + IdealTextWidth(label) + HotkeyGap + hotkeyWidth;
+
+        // 无快捷键（未设置/被关闭）也折叠：连 margin 都不占。
+        hotkey.Visibility = hotkeyWidth > 0 && row.ActualWidth >= need
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    /// <summary>文本的理想渲染宽度。不依赖布局状态——折叠中的元素拿不到这个值。</summary>
+    private static double IdealTextWidth(TextBlock block)
+    {
+        if (block.Text.Length == 0) return 0;
+
+        var typeface = new System.Windows.Media.Typeface(
+            block.FontFamily, block.FontStyle, block.FontWeight, block.FontStretch);
+        var formatted = new System.Windows.Media.FormattedText(
+            block.Text,
+            System.Globalization.CultureInfo.CurrentCulture,
+            System.Windows.FlowDirection.LeftToRight,
+            typeface,
+            block.FontSize,
+            block.Foreground,
+            System.Windows.Media.VisualTreeHelper.GetDpi(block).PixelsPerDip);
+        return formatted.Width;
     }
 
     /// <summary>
@@ -275,41 +313,6 @@ public partial class ShellWindow : Window
             : null;
     }
 
-    private void OnUpdateAvailabilityChanged(object? sender, EventArgs e) =>
-        Dispatcher.BeginInvoke(RefreshUpdateAvailability);
-
-    /// <summary>
-    /// Shows or hides the rail's update badge to match what <see cref="UpdateNotifier"/> has found.
-    /// </summary>
-    /// <remarks>
-    /// Unaffected by 跳過此版本 by design — that choice silences the startup dialog, and taking the
-    /// badge away with it would leave a user who skipped a release with no way back to it short of
-    /// reinstalling.
-    /// </remarks>
-    private void RefreshUpdateAvailability()
-    {
-        var update = UpdateNotifier.Available;
-        if (update is null)
-        {
-            UpdateBtn.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        // The version is on the badge itself rather than behind a hover: it is the one piece of
-        // information that tells the user whether this is the release they already decided about.
-        // 「至」carries the relationship to the version directly above — this is where that number
-        // goes, not merely that a number exists. "v" matches that label's own formatting.
-        UpdateBtnText.Text = LocalizationService.Format("S.Shell.UpdateAvailable", update.LatestVersion);
-        UpdateBtn.Visibility = Visibility.Visible;
-    }
-
-    private void UpdateBtn_Click(object sender, RoutedEventArgs e)
-    {
-        var update = UpdateNotifier.Available;
-        if (update is null) return;
-        UpdateWindow.ShowOrActivate(update);
-    }
-
     private void MinimizeBtn_Click(object sender, RoutedEventArgs e) =>
         WindowState = WindowState.Minimized;
 
@@ -339,6 +342,9 @@ public partial class ShellWindow : Window
     /// it in one press.
     /// </remarks>
     private const double RailWidth = 248;
+
+    /// <summary>The width the hamburger re-opens the rail at: what the user dragged it to, or the default.</summary>
+    private double ExpandedRailWidth => _lastRailDragWidth > 0 ? _lastRailDragWidth : RailWidth;
 
     private static readonly Duration RailDuration = new(TimeSpan.FromMilliseconds(320));
 
@@ -370,12 +376,69 @@ public partial class ShellWindow : Window
     {
         SidebarColumn.Width = new GridLength(Math.Max(0, width));
 
+        // The splitter follows the rail away: a grab handle for a rail that is not there is six
+        // pixels of dead cursor on the page's first column.
+        RailSplitterColumn.Width = new GridLength(width < 1 ? 0 : 6);
+        RailSplitterHost.Visibility = width < 1
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
         // Only once there is nothing left to draw. The rail is clipped to its column, so the
         // collapse reads as the card being wiped off the edge rather than as it shrinking — and a
         // panel left visible at zero width would still take a hit test in the page's first pixel.
         RailPanel.Visibility = width < 1
             ? Visibility.Collapsed
             : Visibility.Visible;
+    }
+
+    // ── 手动拖宽 ──────────────────────────────────────────────────────────
+
+    /// <summary>The width the user last dragged the rail to, kept across window rebuilds.</summary>
+    /// <remarks>Static like the size memory: the shell is built and destroyed per show, and the
+    /// width a user chose is a fact about them, not about one window.</remarks>
+    private static double _lastRailDragWidth;
+
+    /// <summary>The clamp on dragging: below this the quick-tool rows wrap, above it the page is
+    /// all rail. The animated collapse to 0 is untouched — this bounds the drag handle only.</summary>
+    private const double RailMinDragWidth = 200;
+    private const double RailMaxDragWidth = 420;
+
+    /// <summary>True while the pointer is dragging the rail's edge handle.</summary>
+    private bool _railDragging;
+
+    /// <summary>The rail width and the pointer's X when a drag started. The width follows the whole
+    /// gesture from these rather than accumulating per-move deltas, which drop pixels when the
+    /// pointer outruns the layout pass.</summary>
+    private double _railDragStartWidth;
+    private double _railDragStartX;
+
+    private void RailSplitterHost_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _railDragging = true;
+        _railDragStartWidth = CurrentRailWidth;
+        _railDragStartX = e.GetPosition(this).X;
+        RailSplitterHost.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void RailSplitterHost_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_railDragging) return;
+        var delta = e.GetPosition(this).X - _railDragStartX;
+        SidebarColumn.Width = new GridLength(
+            Math.Clamp(_railDragStartWidth + delta, RailMinDragWidth, RailMaxDragWidth));
+    }
+
+    private void RailSplitterHost_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_railDragging) return;
+        _railDragging = false;
+        RailSplitterHost.ReleaseMouseCapture();
+
+        // Straight onto the column: this makes the dragged width the one the rail re-opens at and
+        // the one the next window restores.
+        _lastRailDragWidth = CurrentRailWidth;
+        RefreshQuickToolAvailability(); // no-op layout pass keeps the rows honest after a resize
     }
 
     /// <summary>Puts the rail at <paramref name="width"/> at once, for a layout being restored.</summary>
@@ -418,7 +481,7 @@ public partial class ShellWindow : Window
     private void SidebarToggleBtn_Click(object sender, RoutedEventArgs e)
     {
         _railCollapsed = !_railCollapsed;
-        AnimateRailTo(_railCollapsed ? 0 : RailWidth);
+        AnimateRailTo(_railCollapsed ? 0 : ExpandedRailWidth);
         // Now, rather than when the slide lands: the button already offers the opposite of what it
         // just did, and a tooltip that only caught up 320ms later would be wrong for the whole of
         // the one moment the pointer is still sitting on it.
@@ -475,7 +538,10 @@ public partial class ShellWindow : Window
     private void Nav_Checked(object sender, RoutedEventArgs e)
     {
         var page =
-            ReferenceEquals(sender, SettingsNav) ? ShellPage.Settings :
+            ReferenceEquals(sender, GeneralNav)  ? ShellPage.SettingsGeneral :
+            ReferenceEquals(sender, HotkeysNav)  ? ShellPage.SettingsHotkeys :
+            ReferenceEquals(sender, ServicesNav) ? ShellPage.SettingsServices :
+            ReferenceEquals(sender, TtsNav)      ? ShellPage.SettingsTts :
             ReferenceEquals(sender, RealtimeNav) ? ShellPage.Realtime :
             ShellPage.Translation;
         if (_current == page) return;
@@ -490,25 +556,44 @@ public partial class ShellWindow : Window
         // These pages read state that can change while the user is elsewhere: shared translation
         // preferences, the settings file, and attached monitors plus realtime session state.
         if (page == ShellPage.Translation) _translationPage.Reload();
-        if (page == ShellPage.Settings) _settingsPage.Reload();
+        if (IsSettings(page))
+        {
+            _settingsPage.Reload();
+            _settingsPage.ShowSection(SectionOf(page));
+        }
         if (page == ShellPage.Realtime) _realtimePage.Reload();
 
-        ContentHost.Child = page switch
-        {
-            ShellPage.Settings => _settingsPage,
-            ShellPage.Realtime => _realtimePage,
-            _                  => (UIElement)_translationPage
-        };
+        ContentHost.Child = IsSettings(page)
+            ? _settingsPage
+            : page == ShellPage.Realtime
+                ? _realtimePage
+                : (UIElement)_translationPage;
 
         MoveIndicatorTo(NavItemFor(page));
         AnimateContentIn();
     }
 
+    private static bool IsSettings(ShellPage page) =>
+        page is ShellPage.SettingsGeneral or ShellPage.SettingsHotkeys
+                 or ShellPage.SettingsServices or ShellPage.SettingsTts;
+
+    /// <summary>The settings page's own name for one of the four groups the rail offers.</summary>
+    private static string SectionOf(ShellPage page) => page switch
+    {
+        ShellPage.SettingsHotkeys  => SettingsPage.Sections.Hotkeys,
+        ShellPage.SettingsServices => SettingsPage.Sections.Services,
+        ShellPage.SettingsTts      => SettingsPage.Sections.Tts,
+        _                          => SettingsPage.Sections.General,
+    };
+
     private System.Windows.Controls.RadioButton NavItemFor(ShellPage page) => page switch
     {
-        ShellPage.Settings => SettingsNav,
-        ShellPage.Realtime => RealtimeNav,
-        _                  => TranslationNav
+        ShellPage.SettingsGeneral  => GeneralNav,
+        ShellPage.SettingsHotkeys  => HotkeysNav,
+        ShellPage.SettingsServices => ServicesNav,
+        ShellPage.SettingsTts      => TtsNav,
+        ShellPage.Realtime         => RealtimeNav,
+        _                          => TranslationNav
     };
 
     /// <summary>
@@ -606,6 +691,14 @@ public partial class ShellWindow : Window
     public void OpenServiceSettings(Models.TranslationProvider provider)
         => ServiceSettings.Open(provider);
 
+    /// <param name="template">A preset card's template, pre-picked on the sheet so the service
+    /// page's vendor cards open it already filled for that vendor.</param>
+    public void OpenCustomServiceAdd(Services.CustomServiceTemplate? template = null)
+        => CustomService.OpenForAdd(template);
+
+    public void OpenCustomServiceEditor(Models.CustomTranslatorService service)
+        => CustomService.OpenForEdit(service);
+
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         // RestoreBounds rather than the live size: a maximised window's actual size is the screen's,
@@ -632,9 +725,6 @@ public partial class ShellWindow : Window
         // on the screen, not in this window, and closing the shell is not a request to end it.
         _realtimePage.Teardown();
         Realtime.RealtimeSessionController.Instance.StateChanged -= OnRealtimeStateChanged;
-        // UpdateNotifier is static and outlives every window, so a handler left attached would keep
-        // this closed window alive for as long as the application runs.
-        UpdateNotifier.AvailabilityChanged -= OnUpdateAvailabilityChanged;
         _instance = null;
         base.OnClosed(e);
     }

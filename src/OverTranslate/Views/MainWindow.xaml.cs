@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Interop;
 using NLog;
+using OverTranslate.Models;
 using OverTranslate.Services;
 using OverTranslate.Views.Capture;
 using OverTranslate.Views.Overlay;
@@ -95,7 +96,7 @@ public partial class MainWindow : Window
         _notifyIcon = new NotifyIcon
         {
             Icon = AppIconService.CreateTrayIcon(),
-            Text = "OverTranslate",
+            Text = LocalizationService.Get("S.App.Title"),
             Visible = true
         };
 
@@ -127,10 +128,27 @@ public partial class MainWindow : Window
     /// nothing: claiming a combination globally takes it away from every other application, which is
     /// a real cost to pay for a key that would do nothing.
     /// </remarks>
+    /// <summary>
+    /// The actions whose trigger Windows refused to hand over — the combination is claimed by
+    /// another program. Static so the settings page can show it without holding this window, and
+    /// rebuilt on every (re-)registration.
+    /// </summary>
+    public static readonly HashSet<HotkeyAction> HotkeyRegistrationFailures = [];
+
+    private static string HotkeyActionName(HotkeyAction action) => action switch
+    {
+        HotkeyAction.Capture          => LocalizationService.Get("S.Settings.CaptureHotkey"),
+        HotkeyAction.QuickLookup      => LocalizationService.Get("S.Settings.QuickLookupHotkey"),
+        HotkeyAction.TranslationWindow=> LocalizationService.Get("S.Settings.WindowHotkey"),
+        HotkeyAction.RealtimePause    => LocalizationService.Get("S.Settings.RealtimePauseHotkey"),
+        _ => action.ToString(),
+    };
+
     private void RegisterHotkey()
     {
         var settings = SettingsService.Instance.Current;
         var hwnd = new WindowInteropHelper(this).Handle;
+        HotkeyRegistrationFailures.Clear();
 
         _hotkey = new GlobalHotkey(GlobalHotkey.CaptureId);
         _hotkey.HotkeyPressed += OnHotkeyPressed;
@@ -189,7 +207,32 @@ public partial class MainWindow : Window
                 hooks.TryGetValue(binding.Action, out var hook))
             {
                 hook.Register(hwnd, binding.Modifiers, binding.VirtualKey);
+
+                // RegisterHotKey is a silent failure: the combination belongs to some other program
+                // and the shortcut simply does nothing. Say it here — the log is where the person
+                // pressing the key and nothing happening looks first — and record it for the
+                // settings page and the startup balloon.
+                if (!hook.Registered)
+                {
+                    HotkeyRegistrationFailures.Add(binding.Action);
+                    Log.Warn(
+                        "Hotkey {Action} (key 0x{Key:X2}) could not be registered — another program already claims that combination",
+                        binding.Action, binding.VirtualKey);
+                }
             }
+        }
+
+        // One balloon, once per registration pass, naming what to re-record. A shortcut that
+        // silently does nothing reads as "the feature is broken"; naming the collision turns it
+        // into "change this key in settings".
+        if (HotkeyRegistrationFailures.Count > 0 && _notifyIcon is not null)
+        {
+            var names = string.Join(
+                ", ", HotkeyRegistrationFailures.Order().Select(HotkeyActionName));
+            ShowBalloon(
+                LocalizationService.Get("S.Main.HotkeyConflictTitle"),
+                LocalizationService.Format("S.Main.HotkeyConflictBody", names),
+                CurrentSelectionRect());
         }
 
         _auxiliaryHotkeys = new GlobalAuxiliaryHotkeys();
@@ -645,7 +688,6 @@ public partial class MainWindow : Window
         toolbar.CloseAllRequested       += (_, _) => CloseAll();
         toolbar.BubblesVisibilityChanged += (_, visible) => _overlayWindow?.SetBubblesVisible(visible);
         toolbar.SpeakToggleRequested    += OnSpeakToggleRequested;
-        toolbar.SpeakStopRequested      += (_, _) => _tts.Stop();
         _toolbarWindow = toolbar;
         toolbar.SetTranslationState(hasTranslated);
         toolbar.SetToggleEnabled(blocks.Count > 0);
@@ -819,6 +861,10 @@ public partial class MainWindow : Window
             requestToolbar?.SetTranslationState(true);
             requestToolbar?.SetToggleEnabled(coloredTranslated.Count > 0);
             requestToolbar?.SetEngineBadge(AppServices.Translation.LastEngineUsage);
+
+            // After the overlay is up and the toolbar says it worked. Fire-and-forget: a failure
+            // in the reading must not take the translated overlay away with it.
+            _ = AutoSpeakCaptureAsync(req.SourceLang, req.TargetLang, coloredTranslated);
         }
         // The session was torn down (Esc, re-capture, toolbar close) while this was in flight.
         // Expected and user-initiated — it must stay completely silent, with no error toast.
@@ -877,7 +923,9 @@ public partial class MainWindow : Window
     // capture (so the selection border/handles are never included), and the translation bubbles
     // (when present) are rendered on top. The loading indicator is excluded because the bubble
     // layers are empty while processing, so RenderBubblesForSelection returns null then.
-    private void OnCopyScreenshotRequested(object? sender, EventArgs e)
+    // async: the clipboard write retries on contention (see ClipboardRetry) and must not freeze
+    // the toolbar for the wait.
+    private async void OnCopyScreenshotRequested(object? sender, EventArgs e)
     {
         var selRect = new System.Windows.Rect(
             _lastSelPhysLeft, _lastSelPhysTop, _lastSelPhysWidth, _lastSelPhysHeight);
@@ -915,7 +963,7 @@ public partial class MainWindow : Window
                 result = composed;
             }
 
-            System.Windows.Clipboard.SetImage(result);
+            await Services.ClipboardRetry.SetImageAsync(result);
 
             var settings = SettingsService.Instance.Current;
             if (!settings.SaveScreenshotToDisk)
@@ -961,8 +1009,8 @@ public partial class MainWindow : Window
     /// a time would deliver a paragraph as a list of fragments with a pause after each.
     ///
     /// The source text rather than the translation: this is for hearing how the thing on screen is
-    /// said, which is also why it needs a real source language and why the button is switched off
-    /// until it has one. See <c>ToolbarWindow.RenderSpeakButton</c>.
+    /// said. On a 自動 source the language is guessed from the script the text is written in, the
+    /// same guess <c>TtsService.ResolveWindowsLanguagePrefix</c> makes for the Windows voice.
     /// </remarks>
     private async void OnSpeakToggleRequested(object? sender, EventArgs e)
     {
@@ -973,9 +1021,12 @@ public partial class MainWindow : Window
         if (text.Length == 0) return;
 
         var lang = toolbar.CurrentSourceLang;
-        // Belt and braces: the button is already disabled on 自動, and a voice picked for a language
-        // nobody chose reads English aloud in Chinese.
-        if (Models.LanguageData.IsAutomaticSource(lang)) return;
+        // 自動 has no voice of its own, but the text names its script — kana→ja, hangul→ko,
+        // han→zh, else en — so guess one instead of refusing. The guess is the same one the
+        // Windows-voice picker already makes; resolving it here means the online providers get a
+        // real language too, and the button stays usable on the default setting.
+        if (Models.LanguageData.IsAutomaticSource(lang))
+            lang = Services.TtsService.ResolveWindowsLanguagePrefix(lang, text);
 
         // Shown on the press rather than waited for: fetching the audio takes a moment, and the one
         // thing the user needs immediately is the way to stop it.
@@ -996,6 +1047,43 @@ public partial class MainWindow : Window
 
     private string SourceTextForSpeech() =>
         JoinWithoutLineBreaks(_lastOcrBlocks.Select(b => b.Text)).Trim();
+
+    /// <summary>What the last capture auto-speak read aloud, so a re-translate of the same text stays quiet.</summary>
+    private string _lastCaptureAutoSpoken = "";
+
+    /// <summary>
+    /// Reads a finished capture aloud when the user asked for that, and only the first time that
+    /// text arrives.
+    /// </summary>
+    /// <remarks>
+    /// The whole recognised source in one joined utterance and the whole translation in another —
+    /// the same shape the toolbar's own 朗讀 uses — rather than a block at a time, which would
+    /// read a sentence as a list of fragments. An empty translation never speaks, and the same
+    /// translation landing a second time (a re-translate) does not repeat itself.
+    /// </remarks>
+    private async Task AutoSpeakCaptureAsync(
+        string srcLang, string tgtLang, List<TranslatedBlock> blocks)
+    {
+        var mode = SettingsService.Instance.Current.CaptureAutoSpeak;
+        var target = JoinWithoutLineBreaks(blocks.Select(b => b.TranslatedText)).Trim();
+        if (mode == AutoSpeakMode.Off || target.Length == 0) return;
+        if (_tts.IsActive && target == _lastCaptureAutoSpoken) return;
+        _lastCaptureAutoSpoken = target;
+
+        try
+        {
+            await TtsService.SpeakTranslationAsync(
+                _tts, mode,
+                SourceTextForSpeech(), srcLang,
+                target, tgtLang);
+        }
+        catch (Exception ex)
+        {
+            // Same policy as the toolbar's own speak failure, minus the balloon: the overlay is
+            // already showing the translation the reading was a follow-up to.
+            Log.Warn(ex, "Capture auto-speak failed");
+        }
+    }
 
     private System.Windows.Rect CurrentSelectionRect() => new(
         _lastSelPhysLeft, _lastSelPhysTop, _lastSelPhysWidth, _lastSelPhysHeight);
@@ -1113,7 +1201,7 @@ public partial class MainWindow : Window
         ReferenceEquals(toolbar, _toolbarWindow) &&
         ReferenceEquals(captureWindow, _captureWindow);
 
-    private static void OpenSettings() => ShellWindow.ShowOrActivate(ShellPage.Settings);
+    private static void OpenSettings() => ShellWindow.ShowOrActivate(ShellPage.SettingsGeneral);
 
     private void ShowTrayMenu()
     {

@@ -4,14 +4,19 @@
     <!-- ═══════════════════════════════════════════ -->
     <!--  FONTS / SIZES                              -->
     <!-- ═══════════════════════════════════════════ -->
-    <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI, Microsoft JhengHei UI, Sans-Serif</FontFamily>
+    <!-- 界面默认字体 = Windows 系统默认（Segoe UI Variable/Segoe UI），中文回退微软雅黑(简体)。
+         曾经回退 Microsoft JhengHei(繁体)，简体文本渲染出来是繁体字形观感。
+         引用处一律 DynamicResource：UiFontService 在用户换字体后原位替换本键，无需重启。
+         OverlayTextFont 供译文叠加(截图气泡/实时字幕)使用，中文字体在前，见 UiFontService。 -->
+    <FontFamily x:Key="AppFont">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI, Sans-Serif</FontFamily>
+    <FontFamily x:Key="OverlayTextFont">Microsoft YaHei UI, Segoe UI Variable Text, Segoe UI, Sans-Serif</FontFamily>
     <sys:Double xmlns:sys="clr-namespace:System;assembly=mscorlib" x:Key="AppFontSize">13</sys:Double>
 
     <!-- ═══════════════════════════════════════════ -->
     <!--  SECTION HEADER                             -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="SectionHeader" TargetType="TextBlock">
-        <Setter Property="FontFamily"  Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"  Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"    Value="11"/>
         <Setter Property="FontWeight"  Value="SemiBold"/>
         <Setter Property="Foreground"  Value="{DynamicResource AppSectionHeader}"/>
@@ -22,7 +27,7 @@
     <!--  FIELD LABEL                                -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="FieldLabel" TargetType="TextBlock">
-        <Setter Property="FontFamily"        Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"        Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"          Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"        Value="{DynamicResource AppTextSecondary}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -33,7 +38,7 @@
     <!--  FIELD HINT                                 -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="FieldHint" TargetType="TextBlock">
-        <Setter Property="FontFamily"   Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"   Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"     Value="11"/>
         <Setter Property="Foreground"   Value="{DynamicResource AppTextSecondary}"/>
         <Setter Property="Margin"       Value="2,3,0,0"/>
@@ -133,7 +138,7 @@
     <!--  for the sub-headings inside a card.        -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="CardTitle" TargetType="TextBlock">
-        <Setter Property="FontFamily"        Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"        Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"          Value="15"/>
         <Setter Property="FontWeight"        Value="Bold"/>
         <Setter Property="Foreground"        Value="{DynamicResource AppTextPrimary}"/>
@@ -178,38 +183,7 @@
     <!-- ═══════════════════════════════════════════ -->
     <!--  APP GLYPH MARK                             -->
     <!--                                             -->
-    <!--  The product mark reduced to what holds up  -->
-    <!--  at 28px, which is the size 取詞翻譯 shows  -->
-    <!--  it at. The full icon carries more than     -->
-    <!--  that size can. Window and taskbar icons    -->
-    <!--  keep the full icon: that is where the app  -->
-    <!--  is picked out from among other apps, and   -->
-    <!--  it has the room for it there.              -->
-    <!--                                             -->
-    <!--  From icons/icon-glyph.svg. Its sibling     -->
-    <!--  icon-glyph2.svg is the same drawing minus  -->
-    <!--  the backing plate and shifted 33, so the   -->
-    <!--  frame and the 譯 are declared once here    -->
-    <!--  and the plate supplies the offset.         -->
-    <!--                                             -->
-    <!--  Vector rather than a rasterised ico: this  -->
-    <!--  sits inline beside text, so it has to stay -->
-    <!--  clean at whatever the caller's DPI turns   -->
-    <!--  28 into.                                   -->
-    <!--                                             -->
-    <!--  Unlike the two marks above, the colours    -->
-    <!--  come from the theme. Those are other       -->
-    <!--  companies' marks and are fixed; this one   -->
-    <!--  is ours, and the dark plate the file ships -->
-    <!--  is the heaviest thing in a light-theme row -->
-    <!--  built otherwise from thin glyphs and text. -->
-    <!--  See AppGlyphInk in the theme files.        -->
     <!-- ═══════════════════════════════════════════ -->
-
-    <!-- Bare bounds run 0–190 rather than 5–185, because the pen straddles the frame's edge. -->
-    <Geometry x:Key="AppGlyphFrameGeometry">F1 M41,5 l108,0 c19.944,0 36,16.056 36,36 l0,108 c0,19.944 -16.056,36 -36,36 l-108,0 c-19.944,0 -36,-16.056 -36,-36 l0,-108 c0,-19.944 16.056,-36 36,-36 z</Geometry>
-    <Geometry x:Key="AppGlyphYiGeometry">F1 M50.8,73.424l0,9.36l29.536,0l0,-9.36l-29.536,0zm0,14.04l0,9.464l29.536,0l0,-9.464l-29.536,0zm73.632,-33.488l5.72,0l0,8.216l-5.72,0l0,-8.216zm-14.56,0l5.616,0l0,8.216l-5.616,0l0,-8.216zm-14.352,0l5.616,0l0,8.216l-5.616,0l0,-8.216zm-40.144,-8.216c2.392,3.952 5.096,9.256 6.76,13.104l-15.912,0l0,9.88l36.192,0l0,-9.88l-16.536,0l6.864,-3.744c-1.664,-3.848 -4.784,-9.568 -7.696,-13.936l-9.672,4.576zm-4.888,56.16l0,35.984l10.608,0l0,-4.368l19.24,0l0,-31.616l-29.848,0zm10.608,9.88l8.528,0l0,11.752l-8.528,0l0,-11.752zm24.44,-66.664l0,26l20.8,0l0,4.056l-19.24,0l0,8.84l19.24,0l0,4.472l-23.608,0l0,9.568l17.472,0l-6.864,1.768c0.832,1.768 1.768,3.848 2.392,5.72l-9.776,0l0,9.152l20.384,0l0,4.576l-23.4,0l0,9.048l23.4,0l0,11.024l11.856,0l0,-11.024l24.752,0l0,-9.048l-24.752,0l0,-4.576l21.84,0l0,-9.152l-11.856,0l3.848,-5.408l-8.528,-2.08l19.448,0l0,-9.568l-24.752,0l0,-4.472l20.592,0l0,-8.84l-20.592,0l0,-4.056l22.464,0l0,-26l-55.12,0zm31.512,60.424l-10.816,0l0.312,-0.104c-0.52,-2.08 -1.768,-5.096 -3.12,-7.384l17.264,0c-0.936,2.288 -2.288,5.096 -3.64,7.488z</Geometry>
-    <Geometry x:Key="AppGlyphPlateGeometry">F1 M48,0 l160,0 c26.592,0 48,21.408 48,48 l0,160 c0,26.592 -21.408,48 -48,48 l-160,0 c-26.592,0 -48,-21.408 -48,-48 l0,-160 c0,-26.592 21.408,-48 48,-48 z</Geometry>
 
     <!-- Drawn as Paths in the visual tree rather than as a DrawingImage, which is what this
          started as. A DrawingImage is a resource with no element behind it, and a DynamicResource
@@ -231,28 +205,11 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContentControl">
-                    <Viewbox Stretch="Uniform">
-                        <Canvas Width="256" Height="256">
-                            <!-- The plate is a flat block of colour against the popup surface,
-                                 and on its own the edge just stops — the same reason the rail
-                                 tiles in 側邊欄 carry a border over their tinted fill. Thickness
-                                 9 lands on roughly one pixel at the size this is used, and the
-                                 edge colour stays close enough to the plate to define it rather
-                                 than ring it. -->
-                            <Path Data="{StaticResource AppGlyphPlateGeometry}"
-                                  Fill="{DynamicResource AppGlyphPlate}"
-                                  Stroke="{DynamicResource AppGlyphPlateEdge}"
-                                  StrokeThickness="9"/>
-                            <Canvas Canvas.Left="33" Canvas.Top="33">
-                                <Path Data="{StaticResource AppGlyphFrameGeometry}"
-                                      Fill="{DynamicResource AppGlyphField}"
-                                      Stroke="{DynamicResource AppGlyphInk}"
-                                      StrokeThickness="10"/>
-                                <Path Data="{StaticResource AppGlyphYiGeometry}"
-                                      Fill="{DynamicResource AppGlyphInk}"/>
-                            </Canvas>
-                        </Canvas>
-                    </Viewbox>
+                    <!-- 取词翻译窗口头部的品牌角标。自 2.5.0 起从矢量「譯」字 mark 换成新应用图标的
+                         透明位图（icon_brand.png），与应用图标、托盘、exe 图标视觉统一。 -->
+                    <Image Source="pack://application:,,,/icons/icon_brand.png"
+                           Stretch="Uniform"
+                           SnapsToDevicePixels="True"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -329,32 +286,50 @@
     <Geometry x:Key="PlayPauseMarkGeometry">M3.57,3.83 L7.49,7.08 Q8.6,8 7.49,8.92 L3.57,12.17 Q1.6,13.8 1.6,11.25 L1.6,4.75 Q1.6,2.2 3.57,3.83 Z M11.9,2.9 V13.1 M14.5,2.9 V13.1</Geometry>
 
     <!-- ═══════════════════════════════════════════ -->
-    <!--  SERVICE TILE                               -->
-    <!--  One translation service that has something -->
-    <!--  to configure. Filled rather than outlined  -->
-    <!--  like a card, so a row of them reads as a   -->
-    <!--  set of choices inside the card holding     -->
-    <!--  them and not as more cards.                -->
+    <!--  SERVICE CARD + ACTION BUTTON               -->
+    <!--  The service page's compact one-line card:  -->
+    <!--  mark, name, status, icon-only actions.     -->
+    <!--  Built from code-behind because what a card -->
+    <!--  holds is decided per service at read time; -->
+    <!--  these are the looks every card shares.     -->
     <!-- ═══════════════════════════════════════════ -->
-    <Style x:Key="ServiceTileBorder" TargetType="Border">
+    <Style x:Key="ServiceCardBorder" TargetType="Border">
         <Setter Property="Background"      Value="{DynamicResource AppSurfaceBg}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource AppSubtleBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius"    Value="8"/>
-        <Setter Property="Padding"         Value="14,12"/>
+        <Setter Property="Padding"         Value="10,9"/>
+        <Setter Property="Margin"          Value="0,0,8,8"/>
     </Style>
 
-    <!-- The tile's state word. The fill and the text colour say which state it is, so both are
-         written from code-behind; everything that is the same in all three states lives here. -->
-    <Style x:Key="ServiceBadgeBorder" TargetType="Border">
-        <Setter Property="CornerRadius"       Value="4"/>
-        <Setter Property="Padding"            Value="7,2"/>
-        <Setter Property="VerticalAlignment"  Value="Center"/>
-    </Style>
-
-    <Style x:Key="ServiceBadgeText" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
-        <Setter Property="FontSize"   Value="11"/>
+    <!-- 26px icon-only action. No text on the card itself — the tooltip names it — because the
+         cards are small on purpose and four word-buttons would be most of each one. -->
+    <Style x:Key="ServiceActionButton" TargetType="Button">
+        <Setter Property="Width"       Value="26"/>
+        <Setter Property="Height"      Value="26"/>
+        <Setter Property="Padding"     Value="0"/>
+        <Setter Property="Background"  Value="Transparent"/>
+        <Setter Property="Foreground"  Value="{DynamicResource AppTextSecondary}"/>
+        <Setter Property="Cursor"      Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background"
+                                    Value="{DynamicResource AppAccentSubtle}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.35"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ═══════════════════════════════════════════ -->
@@ -516,7 +491,7 @@
     <!--  the whole cell it happens to occupy.       -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="IconTextButton" TargetType="Button">
-        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"        Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"      Value="{DynamicResource AppTextSecondary}"/>
         <Setter Property="Background"      Value="Transparent"/>
@@ -559,7 +534,7 @@
     <!--  don't repeat it on the ScrollViewer.       -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="ModernTextBox" TargetType="TextBox">
-        <Setter Property="FontFamily"              Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"              Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"                Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"              Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Background"              Value="{DynamicResource AppInputBg}"/>
@@ -643,7 +618,7 @@
 
     <!-- Multi-line textbox (translation content area) -->
     <Style x:Key="MultilineTextBox" TargetType="TextBox">
-        <Setter Property="FontFamily"              Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"              Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"                Value="14"/>
         <Setter Property="Foreground"              Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Background"              Value="{DynamicResource AppSurfaceBg}"/>
@@ -675,7 +650,7 @@
     <!--  FLAT BUTTON                                -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="FlatButton" TargetType="Button">
-        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"        Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"      Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Background"      Value="{DynamicResource AppButtonBg}"/>
@@ -718,7 +693,7 @@
     <!--  ACCENT BUTTON                              -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="AccentButton" TargetType="Button">
-        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"        Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"      Value="{DynamicResource AppAccentFg}"/>
         <Setter Property="Background"      Value="{DynamicResource AppAccent}"/>
@@ -759,7 +734,7 @@
     <!--  ICON BUTTON                                -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="IconButton" TargetType="Button">
-        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"        Value="14"/>
         <Setter Property="Foreground"      Value="{DynamicResource AppTextSecondary}"/>
         <Setter Property="Background"      Value="Transparent"/>
@@ -831,7 +806,7 @@
     </ControlTemplate>
 
     <Style x:Key="ModernComboBox" TargetType="ComboBox">
-        <Setter Property="FontFamily"              Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"              Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"                Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"              Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Background"              Value="{DynamicResource AppInputBg}"/>
@@ -845,7 +820,7 @@
             <Setter.Value>
                 <DataTemplate>
                     <TextBlock Text="{Binding Display}"
-                               FontFamily="{StaticResource AppFont}"
+                               FontFamily="{DynamicResource AppFont}"
                                TextTrimming="CharacterEllipsis"/>
                 </DataTemplate>
             </Setter.Value>
@@ -853,7 +828,7 @@
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ComboBoxItem">
-                    <Setter Property="FontFamily"  Value="{StaticResource AppFont}"/>
+                    <Setter Property="FontFamily"  Value="{DynamicResource AppFont}"/>
                     <Setter Property="FontSize"    Value="{StaticResource AppFontSize}"/>
                     <Setter Property="Foreground"  Value="{DynamicResource AppTextPrimary}"/>
                     <Setter Property="Background"  Value="Transparent"/>
@@ -943,7 +918,7 @@
     <!--  RADIO BUTTON (theme selector pill style)   -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="ThemeRadioButton" TargetType="RadioButton">
-        <Setter Property="FontFamily"  Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"  Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"    Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"  Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Cursor"      Value="Hand"/>
@@ -1047,7 +1022,7 @@
     </Style>
 
     <Style x:Key="StepperValue" TargetType="TextBlock">
-        <Setter Property="FontFamily"          Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"          Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"            Value="{StaticResource AppFontSize}"/>
         <Setter Property="FontWeight"          Value="SemiBold"/>
         <Setter Property="Foreground"          Value="{DynamicResource AppTextPrimary}"/>
@@ -1059,7 +1034,7 @@
     </Style>
 
     <Style x:Key="SegmentedRadioButton" TargetType="RadioButton">
-        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"   Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Cursor"     Value="Hand"/>
@@ -1121,7 +1096,7 @@
     </Style>
 
     <Style x:Key="StepBadgeText" TargetType="TextBlock">
-        <Setter Property="FontFamily"           Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"           Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"             Value="12"/>
         <Setter Property="FontWeight"           Value="SemiBold"/>
         <Setter Property="Foreground"           Value="{DynamicResource AppAccentFg}"/>
@@ -1130,7 +1105,7 @@
     </Style>
 
     <Style x:Key="StepLabel" TargetType="TextBlock">
-        <Setter Property="FontFamily"        Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"        Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"          Value="12"/>
         <Setter Property="Foreground"        Value="{DynamicResource AppAccent}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -1138,7 +1113,7 @@
     </Style>
 
     <Style x:Key="StepTitle" TargetType="TextBlock">
-        <Setter Property="FontFamily"  Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"  Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"    Value="15"/>
         <Setter Property="FontWeight"  Value="SemiBold"/>
         <Setter Property="Foreground"  Value="{DynamicResource AppTextPrimary}"/>
@@ -1173,7 +1148,7 @@
     <!--  thing rather than as one choice.           -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="ChoiceTile" TargetType="RadioButton">
-        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"   Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}"/>
         <Setter Property="Cursor"     Value="Hand"/>
@@ -1272,7 +1247,7 @@
     </Style>
 
     <Style x:Key="ChoiceTileTitle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"   Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}"/>
@@ -1382,7 +1357,7 @@
     </Style>
 
     <Style x:Key="ToolbarStackButton" TargetType="Button">
-        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"        Value="11"/>
         <Setter Property="Foreground"      Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Background"      Value="Transparent"/>
@@ -1549,7 +1524,7 @@
          accent hue for an alternating rhythm but never competes with the one true primary action.
          Fills with the solid accent on hover. -->
     <Style x:Key="ToolbarSubtleAccentButton" TargetType="Button">
-        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"        Value="12"/>
         <Setter Property="Foreground"      Value="{DynamicResource AppAccent}"/>
         <Setter Property="Background"      Value="{DynamicResource AppAccentSubtle}"/>
@@ -1596,7 +1571,7 @@
     <!--  CHECKBOX                                   -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="ModernCheckBox" TargetType="CheckBox">
-        <Setter Property="FontFamily"              Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"              Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"                Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"              Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Cursor"                  Value="Hand"/>
@@ -1703,14 +1678,14 @@
     <!--  PAGE HEADER (shell content pages)          -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="PageTitle" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"   Value="26"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource AppTextPrimary}"/>
     </Style>
 
     <Style x:Key="PageSubtitle" TargetType="TextBlock">
-        <Setter Property="FontFamily"   Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"   Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"     Value="13"/>
         <Setter Property="Foreground"   Value="{DynamicResource AppTextSecondary}"/>
         <Setter Property="Margin"       Value="0,4,0,0"/>
@@ -1851,7 +1826,7 @@
     <!--  recolours both.                            -->
     <!-- ═══════════════════════════════════════════ -->
     <Style x:Key="NavItem" TargetType="RadioButton">
-        <Setter Property="FontFamily"  Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"  Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"    Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"  Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Background"  Value="Transparent"/>
@@ -1862,7 +1837,7 @@
                     <Border x:Name="Root"
                             Background="{TemplateBinding Background}"
                             CornerRadius="6"
-                            Margin="8,2"
+                            Margin="14,2,10,2"
                             Padding="12,0"
                             Height="40">
                         <ContentPresenter VerticalAlignment="Center"
@@ -1904,7 +1879,7 @@
          Hover and press walk AppAccentSubtle's own steps rather than the neutral button greys: a
          tinted surface that turns grey under the pointer reads as a different control appearing. -->
     <Style x:Key="RailUpdateChip" TargetType="Button">
-        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"        Value="10"/>
         <Setter Property="Foreground"      Value="{DynamicResource AppAccent}"/>
         <Setter Property="Background"      Value="{DynamicResource AppAccentSubtle}"/>
@@ -1942,7 +1917,7 @@
     <!-- Same visuals, no selected state — for actions that open a dialog
          rather than switching pages (關於) -->
     <Style x:Key="NavActionItem" TargetType="Button">
-        <Setter Property="FontFamily"  Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"  Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"    Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"  Value="{DynamicResource AppTextSecondary}"/>
         <Setter Property="Background"  Value="Transparent"/>
@@ -1953,7 +1928,7 @@
                     <Border x:Name="Root"
                             Background="{TemplateBinding Background}"
                             CornerRadius="6"
-                            Margin="8,2"
+                            Margin="14,2,10,2"
                             Padding="12,0"
                             Height="36">
                         <ContentPresenter VerticalAlignment="Center"
@@ -1992,7 +1967,7 @@
          antialiasing cannot run — text inside a shadowed Border came out visibly soft next to the
          nav items. Same trap ShellWindow's page transition documents for BitmapCache. -->
     <Style x:Key="RailQuickTool" TargetType="Button">
-        <Setter Property="FontFamily"      Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"        Value="{StaticResource AppFontSize}"/>
         <Setter Property="Foreground"      Value="{DynamicResource AppTextPrimary}"/>
         <Setter Property="Background"      Value="{DynamicResource AppCardBg}"/>
@@ -2009,7 +1984,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="8"
-                            Margin="8,3"
+                            Margin="14,3,10,3"
                             Padding="11,0"
                             Height="46">
                         <ContentPresenter VerticalAlignment="Center"/>
@@ -2063,7 +2038,7 @@
     <!-- The shortcut trailing a 快速工具 row: a reference the user reads once, not a second label
          competing with the row's name. -->
     <Style x:Key="RailQuickToolHotkey" TargetType="TextBlock">
-        <Setter Property="FontFamily"        Value="{StaticResource AppFont}"/>
+        <Setter Property="FontFamily"        Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"          Value="11"/>
         <Setter Property="Foreground"        Value="{DynamicResource AppTextSecondary}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>

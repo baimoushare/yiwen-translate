@@ -10,7 +10,7 @@
         <!-- A page header, not a control to set: the underline is the whole of the selected look,
              so nothing here can be mistaken for a switch that is on. -->
         <Style x:Key="PromptTab" TargetType="RadioButton">
-            <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource AppFont}"/>
             <Setter Property="FontSize"   Value="{StaticResource AppFontSize}"/>
             <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -52,7 +52,7 @@
              as damage rather than as a control. Its own template because FlatButton is built the
              other way round — a surface that fills. -->
         <Style x:Key="AdvancedToggleRow" TargetType="Button">
-            <Setter Property="FontFamily"          Value="{StaticResource AppFont}"/>
+            <Setter Property="FontFamily"          Value="{DynamicResource AppFont}"/>
             <Setter Property="FontSize"            Value="{StaticResource AppFontSize}"/>
             <Setter Property="Foreground"          Value="{DynamicResource AppTextSecondary}"/>
             <Setter Property="Background"          Value="Transparent"/>
@@ -86,7 +86,7 @@
 
     <!-- Scrim: swallows clicks so the page underneath stays inert, and dismisses on click -->
     <Grid x:Name="Scrim"
-          Background="#8C000000"
+          Background="#C0000000"
           MouseLeftButtonDown="Scrim_MouseLeftButtonDown">
 
         <!-- Layout rounding for the same reason the about card uses it: a centred card at an odd
@@ -123,7 +123,7 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="&#xE713;" Style="{StaticResource CardHeaderIcon}" FontSize="18"/>
                         <TextBlock x:Name="TitleText"
-                                   FontFamily="{StaticResource AppFont}"
+                                   FontFamily="{DynamicResource AppFont}"
                                    FontSize="17"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource AppTextPrimary}"
@@ -217,14 +217,14 @@
                                                 C11.1,12.1 9.3,12.5 8,13.5
                                                 M8,4.3 L8,13.5"/>
 
-                                    <TextBlock FontFamily="{StaticResource AppFont}"
+                                    <TextBlock FontFamily="{DynamicResource AppFont}"
                                                FontSize="{StaticResource AppFontSize}"
                                                VerticalAlignment="Center"
                                                TextWrapping="Wrap">
                                         <Hyperlink x:Name="OllamaGuideLink"
                                                    Foreground="{DynamicResource AppAccent}"
                                                    RequestNavigate="OllamaGuideLink_RequestNavigate"
-                                                   NavigateUri="https://github.com/asd880921/OverTranslate/blob/main/OLLAMA_GUIDE.md"><Run Text="{DynamicResource S.Settings.OllamaGuide}"/></Hyperlink>
+                                                   NavigateUri="https://github.com/baimoushare/yiwen-translate/blob/main/OLLAMA_GUIDE.md"><Run Text="{DynamicResource S.Settings.OllamaGuide}"/></Hyperlink>
                                     </TextBlock>
                                 </StackPanel>
                             </Border>
@@ -237,7 +237,7 @@
                                          TextChanged="OpenAiSetting_TextChanged"/>
                                 <TextBlock x:Name="OpenAiBaseUrlPlaceholder"
                                            IsHitTestVisible="False"
-                                           FontFamily="{StaticResource AppFont}"
+                                           FontFamily="{DynamicResource AppFont}"
                                            FontSize="{StaticResource AppFontSize}"
                                            Foreground="{DynamicResource AppTextSecondary}"
                                            Opacity="0.7"
@@ -255,22 +255,10 @@
                             <TextBlock Grid.Column="0" Grid.Row="3" Text="{DynamicResource S.Settings.ModelName}"
                                        Margin="0,10,0,0"
                                        Style="{StaticResource FieldLabel}"/>
-                            <Grid Grid.Column="1" Grid.Row="3" Margin="0,10,0,0">
-                                <TextBox x:Name="OpenAiModelBox"
-                                         Style="{StaticResource ModernTextBox}"
-                                         TextChanged="OpenAiSetting_TextChanged"/>
-                                <!-- Same contract as the prompt below: an empty box means the
-                                     built-in default, and this is that default shown in place
-                                     rather than described somewhere else. -->
-                                <TextBlock x:Name="OpenAiModelPlaceholder"
-                                           IsHitTestVisible="False"
-                                           FontFamily="{StaticResource AppFont}"
-                                           FontSize="{StaticResource AppFontSize}"
-                                           Foreground="{DynamicResource AppTextSecondary}"
-                                           Opacity="0.7"
-                                           Margin="10,0,10,0"
-                                           VerticalAlignment="Center"/>
-                            </Grid>
+                            <!-- 模型名支持从端点拉取官方列表点选；空框时代控件自己显示内置默认 -->
+                            <controls:ModelBox Grid.Column="1" Grid.Row="3" x:Name="OpenAiModelField"
+                                                Margin="0,10,0,0"
+                                                ModelTextChanged="OpenAiModel_ModelChanged"/>
 
                             <!-- Collapsed by default: nothing in here is needed to translate, and a
                                  user who never has a model that disagrees with the defaults never
@@ -367,7 +355,7 @@
                                                        Text="{DynamicResource S.Settings.TemperatureRange}"
                                                        Margin="10,0,0,0"
                                                        VerticalAlignment="Center"
-                                                       FontFamily="{StaticResource AppFont}"
+                                                       FontFamily="{DynamicResource AppFont}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource AppTextSecondary}"/>
                                         </StackPanel>
@@ -455,7 +443,7 @@
                                                            VerticalAlignment="Top"
                                                            Margin="0,2,9,0"/>
                                                 <TextBlock x:Name="PromptTabHint"
-                                                           FontFamily="{StaticResource AppFont}"
+                                                           FontFamily="{DynamicResource AppFont}"
                                                            FontSize="12"
                                                            Foreground="{DynamicResource AppTextSecondary}"
                                                            TextWrapping="Wrap"/>
@@ -472,7 +460,7 @@
                                                  off so clicking the text still lands in the box. -->
                                             <TextBlock x:Name="PromptPlaceholder"
                                                        IsHitTestVisible="False"
-                                                       FontFamily="{StaticResource AppFont}"
+                                                       FontFamily="{DynamicResource AppFont}"
                                                        FontSize="{StaticResource AppFontSize}"
                                                        Foreground="{DynamicResource AppTextSecondary}"
                                                        Opacity="0.7"
@@ -543,7 +531,7 @@
                                                                 <Setter Property="BorderThickness" Value="0"/>
                                                             </Style>
                                                             <Style x:Key="ParamText" TargetType="TextBlock">
-                                                                <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+                                                                <Setter Property="FontFamily" Value="{DynamicResource AppFont}"/>
                                                                 <Setter Property="FontSize" Value="11"/>
                                                                 <Setter Property="Foreground" Value="{DynamicResource AppTextSecondary}"/>
                                                                 <Setter Property="VerticalAlignment" Value="Center"/>
@@ -695,7 +683,7 @@
                                                                VerticalAlignment="Center"
                                                                Margin="0,0,7,0"/>
                                                     <TextBlock Text="{DynamicResource S.Settings.ResetDefault}"
-                                                               FontFamily="{StaticResource AppFont}"
+                                                               FontFamily="{DynamicResource AppFont}"
                                                                FontSize="12"
                                                                Foreground="{DynamicResource AppTextSecondary}"
                                                                VerticalAlignment="Center"/>
@@ -710,20 +698,53 @@
                 </ScrollViewer>
 
                 <!-- The page's own auto-save line is behind the scrim, so the same contract is
-                     restated here rather than leaving this card looking like it needs an OK. -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,16,0,0">
-                    <TextBlock Text="&#xE945;"
-                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                               FontSize="13"
-                               Foreground="{DynamicResource AppAccent}"
+                     restated here rather than leaving this card looking like it needs an OK.
+                     The test button answers the values on the form, saved or not — OpenAI panel
+                     only, hidden for DeepL (a DeepL key cannot be probed the same way). -->
+                <Grid Grid.Row="3" Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <TextBlock Text="&#xE945;"
+                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource AppAccent}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0"/>
+                        <TextBlock Text="{DynamicResource S.Settings.AutoSaveHint}"
+                                   VerticalAlignment="Center"
+                                   FontFamily="{DynamicResource AppFont}"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource AppTextSecondary}"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="2" x:Name="OpenAiTestBtn"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource FlatButton}"
+                            Click="OpenAiTest_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE945;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="13"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,7,0"/>
+                            <TextBlock Text="{DynamicResource S.Custom.Test}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Grid.Column="3" x:Name="OpenAiTestResult"
                                VerticalAlignment="Center"
-                               Margin="0,0,8,0"/>
-                    <TextBlock Text="{DynamicResource S.Settings.AutoSaveHint}"
-                               VerticalAlignment="Center"
-                               FontFamily="{StaticResource AppFont}"
+                               Margin="10,0,0,0"
+                               FontFamily="{DynamicResource AppFont}"
                                FontSize="12"
-                               Foreground="{DynamicResource AppTextSecondary}"/>
-                </StackPanel>
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="180"/>
+                </Grid>
             </Grid>
         </Border>
     </Grid>

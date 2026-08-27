@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using OverTranslate.Layout;
+using OverTranslate.Models;
 using OverTranslate.Services;
 using OverTranslate.Services.Realtime;
 // UseWindowsForms puts System.Windows.Forms in the implicit usings, and System.Drawing arrives with
@@ -70,8 +71,9 @@ public partial class RealtimeBlockWindow : Window
     // while one subtitle is on screen — pulsed the text the reader was in the middle of. Swapping
     // outright is the quieter of the two, and the repaints it makes visible are better dealt with
     // by not making them: see RealtimeBlockWindow.SetLines and TextSimilarity.
-    private static readonly FontFamily TextFont =
-        new("Microsoft JhengHei, Segoe UI Variable Text, Segoe UI, Sans-Serif");
+    // 每次取值而非静态初始化：字幕字体跟随 UiFontService（默认微软雅黑，可换霞鹜文楷等），
+    // 会话进行中改字体，下一次重绘即生效。
+    private static FontFamily TextFont => UiFontService.OverlayFamily;
 
     // Natural mode uses a real patch of the application under the source text. Refreshing at the
     // same cadence as the screen watcher keeps that patch moving with video without adding another
@@ -286,7 +288,10 @@ public partial class RealtimeBlockWindow : Window
         bool isGrouped = line.SourceLineBounds is { Count: > 1 };
 
         double glyphHeight = GetGlyphHeight(line, sourceHeight);
-        double fontSize = SourceFontScale.Calculate(glyphHeight, _latinSourceToCjkTarget);
+        // The same calibration the screenshot overlay uses, so one setting sizes both: a reader's
+        // preference about translated-text size does not change with the window it arrives in.
+        double calibration = SettingsService.Instance.Current.FontCalibration.FontScale();
+        double fontSize = SourceFontScale.Calculate(glyphHeight, _latinSourceToCjkTarget, calibration);
 
         // How tall the line being replaced actually is, which is not the same as how tall its
         // detection box is. A Latin source arrives with the full box — deliberately, because the

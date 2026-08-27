@@ -32,13 +32,6 @@ public partial class ToolbarWindow : Window
     /// <summary>The speak button was pressed: start reading, or stop if already reading.</summary>
     public event EventHandler? SpeakToggleRequested;
 
-    /// <summary>
-    /// Raised when the button that stops playback is about to stop being usable, so whoever owns the
-    /// voice can stop it. Without this, switching the source language to 自動 mid-sentence would
-    /// leave the text playing with no way to stop it — the stop button is the one being disabled.
-    /// </summary>
-    public event EventHandler? SpeakStopRequested;
-
     // Not readonly: the selection can still be moved and resized until translation starts, and this
     // toolbar is anchored to it — see FollowSelection.
     private double _selPhysLeft;
@@ -122,7 +115,9 @@ public partial class ToolbarWindow : Window
         double scale = ScreenGeometry.ScaleAt(centreX, centreY);
 
         // WPF lays out in DIP regardless of DPI, so the DIP size scales straight to target pixels.
-        double tbW = (ActualWidth  > 0 ? ActualWidth  : 490) * scale;
+        // Fallback width only applies before first layout; icon-only buttons put the real bar
+        // around 420 DIP (the three pickers dominate it).
+        double tbW = (ActualWidth  > 0 ? ActualWidth  : 420) * scale;
         double tbH = (ActualHeight > 0 ? ActualHeight : 38)  * scale;
 
         var wa = System.Windows.Forms.Screen
@@ -152,10 +147,6 @@ public partial class ToolbarWindow : Window
     private void SrcLangBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         SaveCurrentLanguageSelection();
-
-        // The source language is what decides whether there is a voice to read with — see
-        // RenderSpeakButton.
-        RenderSpeakButton();
     }
 
     private void TgtLangBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -165,8 +156,8 @@ public partial class ToolbarWindow : Window
 
     private void ProviderBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (ProviderBox.SelectedValue is not TranslationProvider provider) return;
-        SaveProviderSelection(provider);
+        if (ProviderBox.SelectedValue as string is not { } service) return;
+        SaveProviderSelection(service);
     }
 
     private void SwapBtn_Click(object sender, RoutedEventArgs e)
@@ -211,11 +202,11 @@ public partial class ToolbarWindow : Window
     private void TtsBtn_Click(object sender, RoutedEventArgs e)
         => SpeakToggleRequested?.Invoke(this, EventArgs.Empty);
 
-    /// <summary>Puts the toggle's icon and label on the same side of what pressing it would do.</summary>
+    /// <summary>Puts the toggle's icon and tooltip on the same side of what pressing it would do.</summary>
     private void RenderToggleButton()
     {
         ToggleGlyph.Text = _bubblesVisible ? RevealGlyph : HideGlyph;
-        ToggleLabel.Text = LocalizationService.Get(
+        ToggleBtn.ToolTip = LocalizationService.Get(
             _bubblesVisible ? "S.Toolbar.ShowSource" : "S.Toolbar.ShowTranslation");
     }
 
@@ -236,7 +227,8 @@ public partial class ToolbarWindow : Window
         _isBusy = busy;
         if (busy) HideEngineBadge(); // stale badge shouldn't linger while the next batch runs
         TranslateBtn.IsEnabled = !busy;
-        TranslateLabel.Text = LocalizationService.Get(
+        // The label said this once; the tooltip does now — the button is icon-only.
+        TranslateBtn.ToolTip = LocalizationService.Get(
             busy ? "S.Toolbar.Translating"
                  : _hasTranslated ? "S.Toolbar.Retranslate" : "S.Toolbar.Translate");
         ToggleBtn.IsEnabled = !_isBusy && _toggleEnabled;
@@ -261,15 +253,10 @@ public partial class ToolbarWindow : Window
     /// Settles the speak button against what there is to read and what there is to read it with.
     /// </summary>
     /// <remarks>
-    /// <para>Switched off while the source language is 自動, the same way the translation page's
-    /// 原文 speaker is: there is no such thing as an automatic voice. <see cref="TtsService"/> maps
-    /// 自動 onto Chinese, so English or Japanese text would be read aloud in a Chinese voice — which
-    /// used to happen silently, leaving the user to work out from the sound that a picker three
-    /// controls away was the cause. Recognition can run on 自動 because it is choosing between
-    /// three scripts it can see; a voice has nothing to look at.</para>
-    ///
-    /// <para>Also off until recognition has produced something, because until then it is a button
-    /// whose whole action is to do nothing.</para>
+    /// <para>On while recognition has produced text — which is the one thing this button acts on —
+    /// whatever the language picker says. The picker's 自動 has no voice of its own, but the text
+    /// itself names its script (see <see cref="TtsService.ResolveWindowsLanguagePrefix"/>), so the
+    /// button stays usable there too instead of being off for the default setting almost always.</para>
     ///
     /// <para>Not switched off while a translation is in flight, unlike everything else on this bar:
     /// the text being read is the one already recognised, the new batch does not touch it, and the
@@ -277,33 +264,26 @@ public partial class ToolbarWindow : Window
     /// </remarks>
     private void RenderSpeakButton()
     {
-        var automatic = LanguageData.IsAutomaticSource(SrcLangBox.SelectedValue as string);
+        TtsBtn.IsEnabled = _hasSpeakableText;
 
-        // Before the button goes dead: it is the only thing that can stop what it started.
-        if (automatic && _isSpeaking) SpeakStopRequested?.Invoke(this, EventArgs.Empty);
-
-        TtsBtn.IsEnabled = _hasSpeakableText && !automatic;
-
-        // The glyph and the word are what pressing it does, the way the realtime bar's pause
-        // button works. Both, not just the glyph: a stop square under the word 朗讀 says two
-        // different things at once. Two characters either way, so the row does not shift.
+        // The glyph is what pressing it does, the way the realtime bar's pause button works. The
+        // tooltip follows: a stop square that still said 朗讀 on hover would say two different
+        // things at once.
         TtsGlyph.Text = _isSpeaking ? StopGlyph : SpeakGlyph;
-        TtsLabel.Text = LocalizationService.Get(_isSpeaking ? "S.Toolbar.SpeakStopLabel" : "S.Toolbar.Speak");
 
         // Read through the service rather than bound in XAML, because which of the three applies is
         // a state and not a constant.
         TtsBtn.ToolTip = LocalizationService.Get(
-            automatic ? "S.Toolbar.SpeakAutomatic"
-                      : !_hasSpeakableText ? "S.Toolbar.SpeakNoText"
-                      : _isSpeaking ? "S.Toolbar.SpeakStop"
-                      : "S.Toolbar.SpeakHint");
+            !_hasSpeakableText ? "S.Toolbar.SpeakNoText"
+            : _isSpeaking ? "S.Toolbar.SpeakStop"
+            : "S.Toolbar.SpeakHint");
     }
 
     public void SetTranslationState(bool hasTranslated)
     {
         _hasTranslated = hasTranslated;
         if (!_isBusy)
-            TranslateLabel.Text = LocalizationService.Get(
+            TranslateBtn.ToolTip = LocalizationService.Get(
                 hasTranslated ? "S.Toolbar.Retranslate" : "S.Toolbar.Translate");
     }
 
@@ -352,11 +332,11 @@ public partial class ToolbarWindow : Window
     {
         SrcLangBox.ItemsSource  = LanguageData.OcrSourceLanguages;
         TgtLangBox.ItemsSource  = LanguageData.TargetLanguages;
-        ProviderBox.ItemsSource = LanguageData.Providers;
+        ProviderBox.ItemsSource = ServiceSelection.Options();
 
         SrcLangBox.SelectedValue  = LanguageData.GetValidOcrSourceCode(sourceLang);
         TgtLangBox.SelectedValue  = LanguageData.GetValidTargetCode(targetLang);
-        ProviderBox.SelectedValue = SettingsService.Instance.Current.Provider;
+        ProviderBox.SelectedValue = ServiceSelection.CurrentValue();
         if (ProviderBox.SelectedValue == null) ProviderBox.SelectedIndex = 0;
     }
 
@@ -368,10 +348,9 @@ public partial class ToolbarWindow : Window
         SettingsService.Instance.Save();
     }
 
-    private static void SaveProviderSelection(TranslationProvider provider)
+    private static void SaveProviderSelection(string service)
     {
-        var settings = SettingsService.Instance.Current;
-        settings.Provider = provider;
+        ServiceSelection.ApplyValue(service);
         SettingsService.Instance.Save();
     }
 }

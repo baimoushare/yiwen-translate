@@ -12,7 +12,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:OverTranslate.Views.Shell"
         xmlns:settings="clr-namespace:OverTranslate.Views.Settings"
-        Title="OverTranslate"
+        Title="{DynamicResource S.App.Title}"
         Width="1200" Height="720"
         MinWidth="960" MinHeight="640"
         WindowStartupLocation="CenterScreen"
@@ -77,8 +77,8 @@
                        Margin="6,0,0,0"
                        VerticalAlignment="Center"
                        RenderOptions.BitmapScalingMode="HighQuality"/>
-                <TextBlock Text="OverTranslate"
-                           FontFamily="{StaticResource AppFont}"
+                <TextBlock Text="{DynamicResource S.App.Title}"
+                           FontFamily="{DynamicResource AppFont}"
                            FontSize="12"
                            Margin="8,0,0,0"
                            VerticalAlignment="Center"
@@ -121,8 +121,21 @@
                      even from code. The animation writes it; nothing else does. -->
                 <ColumnDefinition x:Name="SidebarColumn"
                                   Width="248" MinWidth="0"/>
+                <ColumnDefinition x:Name="RailSplitterColumn" Width="6" MinWidth="0"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
+
+            <!-- 侧栏拖宽手柄:6px 透明抓取区,只有光标提示可拖,不画任何线。
+                 手写鼠标拖拽而非 GridSplitter——GridSplitter 会把它自己的列当伸缩列,
+                 向右拖 6px 后列宽压到 0 就卡死,侧栏再也拖不动。 -->
+            <Grid Grid.Column="1"
+                  x:Name="RailSplitterHost"
+                  VerticalAlignment="Stretch"
+                  Background="Transparent"
+                  Cursor="SizeWE"
+                  MouseLeftButtonDown="RailSplitterHost_MouseLeftButtonDown"
+                  MouseMove="RailSplitterHost_MouseMove"
+                  MouseLeftButtonUp="RailSplitterHost_MouseLeftButtonUp"/>
 
             <!-- ══════════ Rail ══════════ -->
             <!-- Clipped, because the column is allowed down to zero: without this the rail's
@@ -151,104 +164,11 @@
                      width. It is deliberately outside the height binding: the mark answers to the
                      name and version, which are always there, and not to a badge that comes and
                      goes — otherwise the mark would resize itself every time a release appeared. -->
-                <Grid DockPanel.Dock="Top" Margin="8,10,8,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- These are a seed, not the final size: MatchBrandIconToText replaces both the
-                         moment the text beside it has been measured, so the mark ends up exactly as
-                         tall as the wordmark and version together. Both dimensions are always set
-                         together — the column is Auto, so an Image left to work its own width out
-                         would report the source bitmap's and take the whole rail. -->
-                    <Image x:Name="BrandIcon"
-                           Grid.Row="0" Grid.Column="0"
-                           Width="38" Height="38"
-                           VerticalAlignment="Top"
-                           RenderOptions.BitmapScalingMode="HighQuality"/>
-
-                    <StackPanel x:Name="BrandText"
-                                Grid.Row="0" Grid.Column="1"
-                                Margin="12,0,0,0">
-                        <TextBlock Text="OverTranslate"
-                                   FontFamily="{StaticResource AppFont}"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource AppTextPrimary}"/>
-                        <TextBlock x:Name="VersionText"
-                                   FontFamily="{StaticResource AppFont}"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource AppTextSecondary}"/>
-                    </StackPanel>
-
-                    <!-- The application's only lasting way of saying a new version exists, and
-                         absent entirely until one does — a permanent badge reading "已是最新版本"
-                         would be a fixture that is right about nothing the user needs to act on.
-                         It sits under the version it contradicts, so the claim and its subject are
-                         read together.
-
-                         Whether it appears is driven by UpdateNotifier rather than by anything this
-                         window knows: the shell is built on demand and destroyed on close, while
-                         the check that found the release may have run hours before this window
-                         existed.
-
-                         A DockPanel inside, not a StackPanel: a horizontal StackPanel measures its
-                         children against infinite width, so the label would never trim and a long
-                         beta version string would run straight out of the rail. Docking the icon
-                         gives the label the remaining width to trim against — and the grid column
-                         is what bounds that width, so no MaxWidth has to be kept in step with the
-                         rail's own. -->
-                    <Button x:Name="UpdateBtn"
-                            Grid.Row="1" Grid.Column="1"
-                            Style="{StaticResource RailUpdateChip}"
-                            HorizontalAlignment="Left"
-                            Margin="12,6,0,0"
-                            Visibility="Collapsed"
-                            Click="UpdateBtn_Click">
-                        <DockPanel>
-                            <!-- Drawn rather than set in Segoe, because Segoe has no circled arrow
-                                 and its circled glyphs (E946, E930) lose their interior below about
-                                 14px anyway — at the 11px this line is set in, the ring survives and
-                                 whatever is inside it does not. A Canvas, not a Grid: Grid centres
-                                 each child by its own bounding box, which would drop the arrowhead
-                                 to the circle's centre instead of its upper half. Canvas keeps the
-                                 literal coordinates, and the Viewbox scales the finished 24-unit
-                                 drawing down to the size the text needs. -->
-                            <Viewbox DockPanel.Dock="Left"
-                                     Width="14" Height="14"
-                                     VerticalAlignment="Center"
-                                     Margin="0,0,6,0">
-                                <Canvas Width="24" Height="24">
-                                    <Ellipse Canvas.Left="2" Canvas.Top="2"
-                                             Width="20" Height="20"
-                                             Stroke="{DynamicResource AppAccent}"
-                                             StrokeThickness="1.75"/>
-                                    <Path Stroke="{DynamicResource AppAccent}"
-                                          StrokeThickness="1.75"
-                                          StrokeStartLineCap="Round"
-                                          StrokeEndLineCap="Round"
-                                          StrokeLineJoin="Round"
-                                          Data="M16,12 L12,8 L8,12 M12,16 L12,8"/>
-                                </Canvas>
-                            </Viewbox>
-                            <TextBlock x:Name="UpdateBtnText"
-                                       VerticalAlignment="Center"
-                                       TextTrimming="CharacterEllipsis"/>
-                        </DockPanel>
-                    </Button>
-                </Grid>
-
                 <!-- The rail's card. Nothing draws the boundary between this and the page: the gap
                      between the two cards is the boundary, which is why neither of them carries an
                      edge on the side that faces the other. -->
                 <Border Style="{StaticResource ShellCard}">
                     <DockPanel>
-
                         <!-- 關於 opens a modal overlay rather than switching pages, so it sits
                              apart from the nav list and never takes the selected state -->
                         <Button x:Name="AboutBtn"
@@ -264,11 +184,7 @@
                             </StackPanel>
                         </Button>
 
-                        <!-- Docked after 關於 so it lands above it. 關於 is the one item down here
-                             and the nav list ends a long way above it, so without a line the two
-                             read as one list with a large accidental gap in it. Inset to 16 so it
-                             starts and ends on the same vertical as the nav rows' own edges, which
-                             is what makes it read as dividing them rather than as a stray rule. -->
+                        <!-- Docked after 關於 so it lands above it -->
                         <Border DockPanel.Dock="Bottom"
                                 Height="1"
                                 Margin="16,0,16,10"
@@ -294,22 +210,21 @@
                                 Style="{StaticResource RailQuickTool}"
                                 ToolTipService.ShowOnDisabled="True"
                                 Click="CaptureBtn_Click">
-                            <DockPanel>
+                            <DockPanel SizeChanged="QuickToolRow_SizeChanged">
                                 <Border DockPanel.Dock="Left" Style="{StaticResource RailQuickToolIcon}">
                                     <Path Style="{StaticResource DrawnMark}"
                                           Data="{StaticResource CaptureMarkGeometry}"
                                           Stroke="{DynamicResource AppAccent}"/>
                                 </Border>
 
-                                <!-- Filled in on every ShowOrActivate so a shortcut changed in 設定
-                                     is never stale. Docked before the label so the label is the
-                                     part that gives way when the two do not both fit — a
-                                     half-written shortcut is worse than none. -->
+                                <!-- 侧栏缩窄时快捷键整段先让位（代码按实测宽度折叠），功能名最后
+                                     才轮到省略号：名字说功能，按键只是提醒。 -->
                                 <TextBlock x:Name="CaptureHotkeyText"
                                            DockPanel.Dock="Right"
                                            Style="{StaticResource RailQuickToolHotkey}"/>
 
-                                <TextBlock Text="{DynamicResource S.Shell.CaptureTranslate}"
+                                <TextBlock x:Name="CaptureLabel"
+                                           Text="{DynamicResource S.Shell.CaptureTranslate}"
                                            FontWeight="SemiBold"
                                            VerticalAlignment="Center"
                                            TextTrimming="CharacterEllipsis"/>
@@ -323,7 +238,7 @@
                                 Style="{StaticResource RailQuickTool}"
                                 ToolTipService.ShowOnDisabled="True"
                                 Click="QuickLookupBtn_Click">
-                            <DockPanel>
+                            <DockPanel SizeChanged="QuickToolRow_SizeChanged">
                                 <Border DockPanel.Dock="Left" Style="{StaticResource RailQuickToolIcon}">
                                     <Path Style="{StaticResource DrawnMark}"
                                           Data="{StaticResource QuickLookupMarkGeometry}"
@@ -334,7 +249,8 @@
                                            DockPanel.Dock="Right"
                                            Style="{StaticResource RailQuickToolHotkey}"/>
 
-                                <TextBlock Text="{DynamicResource S.Shell.QuickLookup}"
+                                <TextBlock x:Name="QuickLookupLabel"
+                                           Text="{DynamicResource S.Shell.QuickLookup}"
                                            FontWeight="SemiBold"
                                            VerticalAlignment="Center"
                                            TextTrimming="CharacterEllipsis"/>
@@ -360,7 +276,14 @@
                                 </Border.RenderTransform>
                             </Border>
 
+                            <!-- 单层导航三分区:快速启动(上方两个动作按钮)/工作区(页面)/设置(分组)。
+                                 设置四项直接挂在这里,设置页内部不再有第二层导航——两层左栏并排
+                                 是旧版最重的设计问题。 -->
                             <StackPanel x:Name="NavPanel">
+                                <TextBlock Text="{DynamicResource S.Shell.SectionWork}"
+                                           Style="{StaticResource SectionHeader}"
+                                           Margin="12,2,0,6"/>
+
                                 <RadioButton x:Name="TranslationNav"
                                              Style="{StaticResource NavItem}"
                                              GroupName="ShellNav"
@@ -388,7 +311,11 @@
                                     </StackPanel>
                                 </RadioButton>
 
-                                <RadioButton x:Name="SettingsNav"
+                                <TextBlock Text="{DynamicResource S.Shell.SectionSettings}"
+                                           Style="{StaticResource SectionHeader}"
+                                           Margin="12,14,0,6"/>
+
+                                <RadioButton x:Name="GeneralNav"
                                              Style="{StaticResource NavItem}"
                                              GroupName="ShellNav"
                                              Checked="Nav_Checked">
@@ -396,11 +323,48 @@
                                         <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                    FontSize="15" Text="&#xE713;"
                                                    Width="24" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{DynamicResource S.Shell.Settings}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{DynamicResource S.Settings.NavGeneral}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </RadioButton>
+                                <RadioButton x:Name="TtsNav"
+                                             Style="{StaticResource NavItem}"
+                                             GroupName="ShellNav"
+                                             Checked="Nav_Checked">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                   FontSize="15" Text="&#xE767;"
+                                                   Width="24" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{DynamicResource S.Settings.NavTts}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+
+                                <RadioButton x:Name="HotkeysNav"
+                                             Style="{StaticResource NavItem}"
+                                             GroupName="ShellNav"
+                                             Checked="Nav_Checked">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                   FontSize="15" Text="&#xE765;"
+                                                   Width="24" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{DynamicResource S.Settings.NavHotkeys}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+
+                                <RadioButton x:Name="ServicesNav"
+                                             Style="{StaticResource NavItem}"
+                                             GroupName="ShellNav"
+                                             Checked="Nav_Checked">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                   FontSize="15" Text="&#xE774;"
+                                                   Width="24" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{DynamicResource S.Settings.NavServices}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+
                             </StackPanel>
                         </Grid>
+
                     </DockPanel>
                 </Border>
             </DockPanel>
@@ -412,7 +376,7 @@
                  surfaces that WPF assumes may be transparent, and ClearType sub-pixel antialiasing
                  cannot run over transparent pixels. An opaque backing plus ClearTypeHint tells WPF
                  the surface really is opaque, so ClearType stays on for the whole transition. -->
-            <Border Grid.Column="1"
+            <Border Grid.Column="2"
                     x:Name="ContentHost"
                     Style="{StaticResource ShellCard}"
                     Margin="16,4,16,16"
@@ -427,8 +391,9 @@
                  the page: one the user can navigate out from behind is not modal. Inside the body
                  row, so the window's own buttons stay reachable — a modal that could close the
                  window is not what the scrim is protecting. -->
-            <shell:AboutOverlay Grid.ColumnSpan="2" x:Name="About"/>
-            <settings:ServiceSettingsOverlay Grid.ColumnSpan="2" x:Name="ServiceSettings"/>
+            <shell:AboutOverlay Grid.ColumnSpan="3" x:Name="About"/>
+            <settings:ServiceSettingsOverlay Grid.ColumnSpan="3" x:Name="ServiceSettings"/>
+            <settings:CustomServiceOverlay Grid.ColumnSpan="3" x:Name="CustomService"/>
         </Grid>
     </Grid>
 </Window>

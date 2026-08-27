@@ -184,7 +184,7 @@ public partial class TranslationPage : UserControl
         var settings = SettingsService.Instance.Current;
         var sourceLanguage = LanguageData.GetValidSourceCode(settings.SourceLanguage);
         var targetLanguage = LanguageData.GetValidTargetCode(settings.TargetLanguage);
-        var provider = settings.Provider;
+        var provider = ServiceSelection.CurrentValue();
         var selectionChanged =
             !Equals(SrcLangBox.SelectedValue, sourceLanguage) ||
             !Equals(TgtLangBox.SelectedValue, targetLanguage) ||
@@ -240,8 +240,8 @@ public partial class TranslationPage : UserControl
 
     private void ProviderBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ProviderBox.SelectedValue is not TranslationProvider provider) return;
-        if (!_reloadingPreferences) SaveProviderSelection(provider);
+        if (ProviderBox.SelectedValue as string is not { } service) return;
+        if (!_reloadingPreferences) SaveProviderSelection(service);
 
         // The answer belongs to the engine that gave it, and the new one may not answer at all —
         // which is the whole of what RenderSourceActions has to settle here.
@@ -507,11 +507,11 @@ public partial class TranslationPage : UserControl
     {
         LocalizationService.BindLocalizedItems(SrcLangBox,  LanguageData.SourceLanguages);
         LocalizationService.BindLocalizedItems(TgtLangBox,  LanguageData.TargetLanguages);
-        LocalizationService.BindLocalizedItems(ProviderBox, LanguageData.Providers);
+        LocalizationService.BindLocalizedItems(ProviderBox, ServiceSelection.Options());
 
         SrcLangBox.SelectedValue  = LanguageData.GetValidSourceCode(sourceLang);
         TgtLangBox.SelectedValue  = LanguageData.GetValidTargetCode(targetLang);
-        ProviderBox.SelectedValue = SettingsService.Instance.Current.Provider;
+        ProviderBox.SelectedValue = ServiceSelection.CurrentValue();
         if (ProviderBox.SelectedValue == null) ProviderBox.SelectedIndex = 0;
     }
 
@@ -523,10 +523,11 @@ public partial class TranslationPage : UserControl
         SettingsService.Instance.Save();
     }
 
-    private static void SaveProviderSelection(TranslationProvider provider)
+    private static void SaveProviderSelection(string service)
     {
-        var settings = SettingsService.Instance.Current;
-        settings.Provider = provider;
+        // One value naming either a built-in provider or a custom: id — ServiceSelection splits
+        // it back into the Provider enum plus the active-custom half of the preference.
+        ServiceSelection.ApplyValue(service);
         SettingsService.Instance.Save();
     }
 }

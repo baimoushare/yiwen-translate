@@ -10,9 +10,9 @@ namespace OverTranslate.Services;
 /// </summary>
 public static class ScreenshotSaveService
 {
-    /// <summary>圖片\OverTranslate — used whenever the user hasn't picked a custom folder.</summary>
+    /// <summary>圖片\Yiwen — used whenever the user hasn't picked a custom folder.</summary>
     public static string DefaultDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "OverTranslate");
+        Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Yiwen");
 
     /// <summary>The folder currently in effect: the user's choice, or the default when unset/blank.</summary>
     public static string ResolveDirectory(string? configured)
@@ -28,7 +28,7 @@ public static class ScreenshotSaveService
         var dir = ResolveDirectory(directory);
         Directory.CreateDirectory(dir);
 
-        var path = Path.Combine(dir, $"OverTranslate_{DateTime.Now:yyyyMMdd_HHmmssfff}.png");
+        var path = Path.Combine(dir, $"Yiwen_{DateTime.Now:yyyyMMdd_HHmmssfff}.png");
 
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(image));

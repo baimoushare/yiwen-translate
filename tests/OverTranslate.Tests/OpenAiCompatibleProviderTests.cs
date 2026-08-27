@@ -80,6 +80,24 @@ public class OpenAiCompatibleProviderTests
         });
     }
 
+    // 简体界面拿简体句子：翻译专用的小模型会模仿指令自身的简繁体，繁体指令连简体目标都
+    // 会被带偏成繁体输出——这正是本分隔存在的原因。
+    [Theory]
+    [InlineData("ZH-HANS", "简体中文")]
+    [InlineData("ZH-HANT", "繁体中文")]
+    public void BuildPrompt_IsWrittenInTheInterfaceLanguage_Simplified(string targetCode, string targetName)
+    {
+        WithInterfaceLanguage(LocalizationService.SimplifiedChinese, () =>
+        {
+            var prompt = OpenAiCompatibleProvider.BuildPrompt("AUTO", targetCode);
+
+            Assert.Contains($"从(各种语言)翻译成({targetName})", prompt);
+            Assert.Contains("只返回自然、人性化的翻译结果", prompt);
+            Assert.DoesNotContain("回傳", prompt);
+            Assert.True(prompt.Length <= 80);
+        });
+    }
+
     // The target language decides what the model is asked to produce; the interface language decides
     // what the sentence asking for it is written in. Translating into Chinese from an English
     // interface has to produce an English instruction naming Chinese.

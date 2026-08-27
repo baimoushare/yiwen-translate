@@ -32,7 +32,7 @@
                  the dim layer just uncovered. -->
             <Rectangle x:Name="SelectionRect"
                        Stroke="#E61E90D5"
-                       StrokeThickness="2"
+                       StrokeThickness="1"
                        RadiusX="3"
                        RadiusY="3"
                        Visibility="Collapsed">
@@ -58,7 +58,7 @@
             </Thumb>
 
             <Thumb x:Name="TopLeftHandle"
-                   Width="14" Height="14"
+                   Width="12" Height="12"
                    Visibility="Collapsed"
                    Cursor="SizeNWSE"
                    DragDelta="TopLeftHandle_DragDelta">
@@ -66,14 +66,14 @@
                     <ControlTemplate TargetType="Thumb">
                         <Border Background="White"
                                 BorderBrush="#CC1E90D5"
-                                BorderThickness="2"
-                                CornerRadius="7"/>
+                                BorderThickness="1.5"
+                                CornerRadius="6"/>
                     </ControlTemplate>
                 </Thumb.Template>
             </Thumb>
 
             <Thumb x:Name="TopRightHandle"
-                   Width="14" Height="14"
+                   Width="12" Height="12"
                    Visibility="Collapsed"
                    Cursor="SizeNESW"
                    DragDelta="TopRightHandle_DragDelta">
@@ -81,14 +81,14 @@
                     <ControlTemplate TargetType="Thumb">
                         <Border Background="White"
                                 BorderBrush="#CC1E90D5"
-                                BorderThickness="2"
-                                CornerRadius="7"/>
+                                BorderThickness="1.5"
+                                CornerRadius="6"/>
                     </ControlTemplate>
                 </Thumb.Template>
             </Thumb>
 
             <Thumb x:Name="BottomLeftHandle"
-                   Width="14" Height="14"
+                   Width="12" Height="12"
                    Visibility="Collapsed"
                    Cursor="SizeNESW"
                    DragDelta="BottomLeftHandle_DragDelta">
@@ -96,14 +96,14 @@
                     <ControlTemplate TargetType="Thumb">
                         <Border Background="White"
                                 BorderBrush="#CC1E90D5"
-                                BorderThickness="2"
-                                CornerRadius="7"/>
+                                BorderThickness="1.5"
+                                CornerRadius="6"/>
                     </ControlTemplate>
                 </Thumb.Template>
             </Thumb>
 
             <Thumb x:Name="BottomRightHandle"
-                   Width="14" Height="14"
+                   Width="12" Height="12"
                    Visibility="Collapsed"
                    Cursor="SizeNWSE"
                    DragDelta="BottomRightHandle_DragDelta">
@@ -111,8 +111,8 @@
                     <ControlTemplate TargetType="Thumb">
                         <Border Background="White"
                                 BorderBrush="#CC1E90D5"
-                                BorderThickness="2"
-                                CornerRadius="7"/>
+                                BorderThickness="1.5"
+                                CornerRadius="6"/>
                     </ControlTemplate>
                 </Thumb.Template>
             </Thumb>
@@ -177,14 +177,14 @@
                                 <!-- Tracking is size-specific: the heading tightens slightly as it
                                      grows, the smaller line opens up a touch to stay legible. -->
                                 <TextBlock Foreground="{DynamicResource AppTextPrimary}"
-                                           FontFamily="{StaticResource AppFont}"
+                                           FontFamily="{DynamicResource AppFont}"
                                            FontSize="14"
                                            FontWeight="SemiBold"
                                            Text="{DynamicResource S.Capture.DragPrompt}"/>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                     <TextBlock Foreground="{DynamicResource AppTextSecondary}"
-                                               FontFamily="{StaticResource AppFont}"
+                                               FontFamily="{DynamicResource AppFont}"
                                                FontSize="12"
                                                VerticalAlignment="Center"
                                                Text="{DynamicResource S.Capture.PressPrefix}"/>
@@ -199,14 +199,14 @@
                                             Margin="5,0"
                                             VerticalAlignment="Center">
                                         <TextBlock Foreground="{DynamicResource AppTextSecondary}"
-                                                   FontFamily="{StaticResource AppFont}"
+                                                   FontFamily="{DynamicResource AppFont}"
                                                    FontSize="10.5"
                                                    FontWeight="SemiBold"
                                                    Text="ESC"/>
                                     </Border>
 
                                     <TextBlock Foreground="{DynamicResource AppTextSecondary}"
-                                               FontFamily="{StaticResource AppFont}"
+                                               FontFamily="{DynamicResource AppFont}"
                                                FontSize="12"
                                                VerticalAlignment="Center"
                                                Text="{DynamicResource S.Capture.CancelSuffix}"/>

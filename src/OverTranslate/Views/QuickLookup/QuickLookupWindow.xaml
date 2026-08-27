@@ -69,7 +69,7 @@
                                 <ContentPresenter.ContentTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding ShortName}"
-                                                   FontFamily="{StaticResource AppFont}"
+                                                   FontFamily="{DynamicResource AppFont}"
                                                    TextTrimming="CharacterEllipsis"/>
                                     </DataTemplate>
                                 </ContentPresenter.ContentTemplate>
@@ -124,7 +124,7 @@
              laid tight against the words on the left and right and clipped the descenders — a
              highlight that looked like a rendering fault rather than a button. -->
         <Style x:Key="ResultActionButton" TargetType="Button">
-            <Setter Property="FontFamily"       Value="{StaticResource AppFont}"/>
+            <Setter Property="FontFamily"       Value="{DynamicResource AppFont}"/>
             <Setter Property="FontSize"         Value="12"/>
             <Setter Property="Foreground"       Value="{DynamicResource AppTextSecondary}"/>
             <Setter Property="Background"       Value="Transparent"/>
@@ -169,7 +169,7 @@
         </Style>
 
         <Style x:Key="SettingRowLabel" TargetType="TextBlock">
-            <Setter Property="FontFamily"        Value="{StaticResource AppFont}"/>
+            <Setter Property="FontFamily"        Value="{DynamicResource AppFont}"/>
             <Setter Property="FontSize"          Value="12"/>
             <Setter Property="Foreground"        Value="{DynamicResource AppTextPrimary}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -251,7 +251,7 @@
                              text the user has to clear before typing. -->
                         <TextBlock x:Name="Placeholder"
                                    Text="{DynamicResource S.QuickLookup.Placeholder}"
-                                   FontFamily="{StaticResource AppFont}"
+                                   FontFamily="{DynamicResource AppFont}"
                                    FontSize="15"
                                    Foreground="{DynamicResource AppTextSecondary}"
                                    Opacity="0.55"
@@ -309,7 +309,7 @@
                              pickers, which is where someone would have met this before. -->
                         <Button Content="⇄"
                                 Style="{StaticResource IconButton}"
-                                FontFamily="{StaticResource AppFont}"
+                                FontFamily="{DynamicResource AppFont}"
                                 FontSize="13"
                                 Width="24" Height="26" Padding="0"
                                 Margin="2,0"
@@ -385,7 +385,7 @@
                                      10 has neither and falls through to Segoe UI, as the shared
                                      stack already does. -->
                                 <TextBlock x:Name="TranslatedText"
-                                           FontFamily="Segoe UI Variable Display, Segoe UI, Microsoft JhengHei UI, Sans-Serif"
+                                           FontFamily="Segoe UI Variable Display, Segoe UI, Microsoft YaHei UI, Sans-Serif"
                                            FontSize="24"
                                            FontWeight="SemiBold"
                                            LineHeight="32"
@@ -410,7 +410,7 @@
                             </StackPanel>
 
                             <TextBlock x:Name="StatusText"
-                                       FontFamily="{StaticResource AppFont}"
+                                       FontFamily="{DynamicResource AppFont}"
                                        FontSize="12"
                                        TextWrapping="Wrap"
                                        Margin="0,2,0,0"
@@ -497,7 +497,7 @@
                                           Grid.Column="1"
                                           Style="{StaticResource ModernComboBox}"
                                           Width="180" Height="30"
-                                          SelectedValuePath="Provider"/>
+                                          SelectedValuePath="Value"/>
                             </Grid>
 
                             <Rectangle Height="1" Fill="{DynamicResource AppSeparator}" Margin="0,0,0,12"/>

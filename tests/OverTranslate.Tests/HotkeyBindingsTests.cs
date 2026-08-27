@@ -11,12 +11,14 @@ public class HotkeyBindingsTests
     [Fact]
     public void EveryDefaultCombinationIsDistinctSoAllOfThemStayOn()
     {
+        // The translation-window shortcut is off by default (v2.2.1: a fourth global combination
+        // by default is one more thing to collide with), so "every default" is the three that are
+        // on — and the point stands: none of them shadows another, so all of them register.
         var active = HotkeyBindings.Active(new AppSettings()).ToList();
 
         Assert.Equal(
             [
                 HotkeyAction.Capture,
-                HotkeyAction.TranslationWindow,
                 HotkeyAction.RealtimePause,
                 HotkeyAction.QuickLookup,
             ],
@@ -31,9 +33,17 @@ public class HotkeyBindingsTests
         // a combination its owner picked against one they have never seen.
         var settings = new AppSettings
         {
+            // Explicitly on: this test is about priority between switched-on shortcuts, and the
+            // window shortcut is off by default since v2.2.1. Both are set onto one combination —
+            // quick-lookup's default is A since v2.2.1, so the collision is built rather than
+            // inherited from the defaults the way it was when Q was its default.
+            TranslationWindowHotkeyEnabled = true,
             TranslationWindowHotkeyModifiers = CtrlAlt,
             TranslationWindowHotkeyVirtualKey = 0x51,
             TranslationWindowHotkeyDisplay = "Ctrl+Alt+Q",
+            QuickLookupHotkeyModifiers = CtrlAlt,
+            QuickLookupHotkeyVirtualKey = 0x51,
+            QuickLookupHotkeyDisplay = "Ctrl+Alt+Q",
         };
 
         var lookup = HotkeyBindings.Resolve(settings)
@@ -52,6 +62,7 @@ public class HotkeyBindingsTests
         // second would simply fail and the user would be told nothing.
         var settings = new AppSettings
         {
+            TranslationWindowHotkeyEnabled = true,
             TranslationWindowHotkeyModifiers = CtrlAlt,
             TranslationWindowHotkeyVirtualKey = 0x53,
             TranslationWindowHotkeyDisplay = "Ctrl+Alt+S",
@@ -71,8 +82,13 @@ public class HotkeyBindingsTests
     {
         var settings = new AppSettings
         {
+            TranslationWindowHotkeyEnabled = true,
+            // All three on one combination, capture included — its default is D since v2.2.1, so
+            // the collision this test feeds the resolver has to be built explicitly.
+            HotkeyModifiers = CtrlAlt,
+            HotkeyVirtualKey = 0x41,
             TranslationWindowHotkeyModifiers = CtrlAlt,
-            TranslationWindowHotkeyVirtualKey = 0x41, // the capture default
+            TranslationWindowHotkeyVirtualKey = 0x41,
             RealtimePauseHotkeyModifiers = CtrlAlt,
             RealtimePauseHotkeyVirtualKey = 0x41,
         };
@@ -136,6 +152,7 @@ public class HotkeyBindingsTests
     {
         var settings = new AppSettings
         {
+            TranslationWindowHotkeyEnabled = true,
             TranslationWindowHotkeyInputKind = ShortcutInputKind.MouseMiddle,
             RealtimePauseHotkeyInputKind = ShortcutInputKind.MouseMiddle,
         };
@@ -154,6 +171,7 @@ public class HotkeyBindingsTests
         // as a clash and one of them would silently stop working.
         var settings = new AppSettings
         {
+            TranslationWindowHotkeyEnabled = true,
             TranslationWindowHotkeyInputKind = ShortcutInputKind.MouseX1,
             RealtimePauseHotkeyInputKind = ShortcutInputKind.MouseX2,
             QuickLookupHotkeyInputKind = ShortcutInputKind.MouseMiddle,
@@ -170,6 +188,7 @@ public class HotkeyBindingsTests
     {
         var settings = new AppSettings
         {
+            TranslationWindowHotkeyEnabled = true,
             TranslationWindowHotkeyInputKind = ShortcutInputKind.MouseX1,
             RealtimePauseHotkeyInputKind = ShortcutInputKind.MouseX1,
         };
