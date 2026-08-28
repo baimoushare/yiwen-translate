@@ -1,218 +1,117 @@
 <div align="center">
   <p>
-    <strong>Language : </strong>
-    <strong><a href="README.en.md">English</a></strong>
+    <strong>语言：</strong>
+    <strong>简体中文 ✓</strong>
     &nbsp;｜&nbsp;
-    <strong>繁體中文 ✓</strong>
+    <strong><a href="README.en.md">English</a></strong>
   </p>
 
-  <img src="src/OverTranslate/icons/icon_256.png" width="250" alt="Yiwen Icon"/>
+  <img src="src/OverTranslate/icons/icon_256.png" width="250" alt="译文图标"/>
   <h1>译文 · Yiwen Translate</h1>
-  <p>一款 Windows 螢幕翻譯工具，支援截圖翻譯、即時翻譯與譯文原位覆蓋。</p>
+  <p>一款 Windows 屏幕翻译工具，支持截图翻译、实时翻译和原位覆盖翻译。</p>
 
   <p>
-    <img src="https://img.shields.io/badge/license-GPL--3.0-22C55E?style=for-the-badge" alt="License GPL-3.0" />
+    <img src="https://img.shields.io/badge/license-GPL--3.0-22C55E?style=for-the-badge" alt="GPL-3.0 license" />
   </p>
 
   <p>
     <a href="https://github.com/baimoushare/yiwen-translate/releases/latest/download/Yiwen-win-Setup.exe">
-      <strong>➡️ Windows 安裝版（推薦）</strong>
+      <strong>➡️ Windows 安装版（推荐）</strong>
     </a>
     &nbsp;｜&nbsp;
     <a href="https://github.com/baimoushare/yiwen-translate/releases/latest/download/Yiwen-win-Portable.zip">
-      <strong>➡️ 免安裝版（Portable）</strong>
+      <strong>免安装版（Portable）</strong>
     </a>
   </p>
-
 </div>
 
-> **译文 (Yiwen Translate)** 是 [OverTranslate](https://github.com/asd880921/OverTranslate) 的中文化改造分支（fork），感謝上游專案。改名後的 packId 為 `Yiwen`，與上游更新通道互不相通；從 OverTranslate 遷移請手動安裝。
+> **译文（Yiwen Translate）** 是基于 [OverTranslate](https://github.com/asd880921/OverTranslate) 开发的中文屏幕翻译工具。本项目保留上游 GPL-3.0 许可，并由 `baimoushare` 独立维护。应用包名和更新通道均为 `Yiwen`，与上游项目相互独立。
 
-## 這是什麼？
+## 项目简介
 
-**译文 (Yiwen Translate)** 是一款專為 Windows 打造的即時螢幕翻譯工具。
+译文是一款面向 Windows 的屏幕翻译工具，支持截图翻译、实时翻译、划词翻译和文字翻译。
 
-支援 **截圖翻譯** 與 **即時翻譯**，可將畫面中的文字辨識翻譯後，直接顯示在原本的位置。  
-無論是遊戲、PDF、影片字幕或其他無法直接選取的文字，都能快速翻譯，減少閱讀時來回切換視窗的干擾。  
-可以直接選取的文字，也可透過 **取詞翻譯** 快速翻譯，或使用 **文字翻譯** 進行完整輸入與翻譯。
+它可以识别屏幕上的文字，翻译后直接显示在原文字附近，适合游戏、PDF、视频字幕、网页、图片和无法直接复制文字的应用界面。OCR 默认在本机运行，截图不会因为 OCR 自动上传到外部服务。
 
-> 用於網頁、PDF、圖片、影音、遊戲介面等各種沒辦法直接選取文字的畫面，可支援多語言混合場景。
+## 主要功能
 
-![翻譯比對圖.png](docs/images/翻譯比對圖.png)
+### 截图翻译
 
----
+关闭主窗口后，应用可以继续驻留在系统托盘。按下快捷键（默认 `Ctrl + Alt + D`），框选需要翻译的区域即可。
 
-## 截圖翻譯
-
-程式可以直接關閉主視窗並常駐在系統匣，平常不需要一直把視窗開著，  
-需要翻譯時按下快捷鍵（預設 Ctrl + Alt + A），框選想翻譯的畫面即可。
-
-| 原文 | 翻譯結果 |
+| 原文 | 翻译结果 |
 |------|----------|
-| ![截圖翻譯1-前.png](docs/images/截圖翻譯1-前.png) | ![截圖翻譯1-後.png](docs/images/截圖翻譯1-後.png) |
-| ![截圖翻譯2-前.png](docs/images/截圖翻譯2-前.png) | ![截圖翻譯2-後.png](docs/images/截圖翻譯2-後.png) |
-| ![截圖翻譯3-前.png](docs/images/截圖翻譯3-前.png) | ![截圖翻譯3-後.png](docs/images/截圖翻譯3-後.png) |
+| ![截图翻译1-前.png](docs/images/截圖翻譯1-前.png) | ![截图翻译1-后.png](docs/images/截圖翻譯1-後.png) |
+| ![截图翻译2-前.png](docs/images/截圖翻譯2-前.png) | ![截图翻译2-后.png](docs/images/截圖翻譯2-後.png) |
+| ![截图翻译3-前.png](docs/images/截圖翻譯3-前.png) | ![截图翻译3-后.png](docs/images/截圖翻譯3-後.png) |
 
----
+### 实时翻译
 
-## 即時翻譯
+适合视频字幕、游戏画面等需要持续翻译的场景。选定区域后，应用会持续识别画面内容，在文字变化时自动更新译文。
 
-適合 **影片字幕、遊戲畫面** 等需要持續翻譯的情境。框選需要翻譯的區域後，會持續辨識畫面內容，  
-文字變動時自動更新譯文並顯示在原本的位置。
+支持屏幕捕获和窗口捕获两种模式：屏幕捕获需要 Windows 11 24H2 或更高版本，窗口捕获需要 Windows 10 1903 或更高版本。
 
-畫面來源分為 **螢幕擷取** 與 **視窗擷取** 兩種模式：  
-螢幕擷取需 Windows 11 24H2 以上，視窗擷取需 Windows 10 1903 以上。
+实时翻译区域可以选择以下模式：
 
-> 目前只建議使用 Microsoft、DeepL、OpenAI 進行翻譯 (延遲較低)。  
-> 譯文的文字顏色、背景色與背景不透明度皆可自由調整，也可開啟 **更符合原背景** 與 **沿用原文字顏色**，讓譯文與背景更貼近原畫面的配色與風格。
+- **字幕 / 对话**：适合字幕和游戏对话等位置相对固定的文字，建议使用一个区域。
+- **游戏 / UI**：适合游戏菜单、提示和位置分散的界面文字，建议使用一到两个区域。
 
-![即時翻譯視窗預覽.png](docs/images/即時翻譯視窗預覽.png)
+实时翻译支持暂停/继续、译文颜色、背景颜色、背景透明度、匹配原背景和保留原文字颜色等设置。
 
-### 翻譯區塊模式 (框選)
+![实时翻译窗口预览](docs/images/即時翻譯視窗預覽.png)
 
-> 即時翻譯進行中可使用快捷鍵（預設 Ctrl + Alt + S）暫停 / 繼續翻譯，  
-> 遇到不需要翻譯的畫面、或想直接看原文時可先暫停，之後再恢復，不必關閉即時翻譯。
+### 划词翻译
 
-每個翻譯區塊都可以個別選擇 **字幕 / 對話** 或 **遊戲 / UI** 模式，並依不同畫面類型使用對應的辨識方式。  
-**字幕 / 對話**：適合影音字幕、遊戲對話等文字位置較集中且固定的場景 (建議使用 1 個)。
+按下快捷键（默认 `Ctrl + Alt + A`）即可打开划词翻译。选中屏幕上的文字后，应用会自动读取并翻译；没有选中文本时，也可以直接输入内容。
 
-| 框選 | 翻譯結果 |
-|------|----------|
-| ![即時翻譯-影片框.png](docs/images/即時翻譯-影片框.png) | ![即時翻譯-影片翻譯.png](docs/images/即時翻譯-影片翻譯.png) |
-| ![即時翻譯1-對話遊戲框.png](docs/images/即時翻譯1-對話遊戲框.png) | ![即時翻譯1-對話遊戲翻譯.png](docs/images/即時翻譯1-對話遊戲翻譯.png) |
-| ![即時翻譯2-對話遊戲框.png](docs/images/即時翻譯2-對話遊戲框.png) | ![即時翻譯2-對話遊戲翻譯.png](docs/images/即時翻譯2-對話遊戲翻譯.png) |
+![划词翻译](docs/images/選詞翻譯.png)
 
-**遊戲 / UI**：適合遊戲中的介面、提示或文字位置較分散、不固定的場景 (建議使用 1 ~ 2 個)。
+### 文字翻译
 
-| 框選 | 翻譯結果 |
-|------|----------|
-| ![即時翻譯-遊戲翻譯框.png](docs/images/即時翻譯-遊戲翻譯框.png) | ![即時翻譯-遊戲翻譯.png](docs/images/即時翻譯-遊戲翻譯.png) |
+输入文字后即可翻译，支持快速交换源语言和目标语言，并提供 Windows 本地文字转语音功能，可以朗读原文或译文。
 
-## 取詞翻譯
-> 快捷鍵（預設 `Ctrl + Alt + Q`）可在任何畫面上直接開啟。
+![文字翻译](docs/images/翻譯視窗預覽.png)
 
-選取文字後按下快捷鍵，會自動帶入並翻譯；未選取文字時，也可以直接輸入內容。  
-切換至其他視窗時會自動關閉；若需要持續顯示，可將視窗釘選。
+## 翻译服务
 
-![選詞翻譯.png](docs/images/選詞翻譯.png)
+项目支持以下翻译服务：
 
----
+- Google 翻译（RPC）
+- Google 翻译（Web）
+- Bing 翻译
+- Microsoft 翻译
+- DeepL
+- OpenAI 兼容接口，包括本地 Ollama 服务
+- 自定义翻译服务
 
-## 文字翻譯
+DeepL 和 OpenAI 兼容接口需要用户自行配置密钥或服务地址。翻译失败或响应过慢时，截图翻译和实时翻译支持自动切换到其他可用服务。
 
-輸入文字後會即時翻譯，來源與目標語言可以快速互換，也有內建文字轉語音（TTS），  
-可以朗讀原文或翻譯結果。
+## OCR 与隐私
 
-![翻譯視窗預覽.png](docs/images/翻譯視窗預覽.png)
+OCR 使用 RapidOcrNet 和 ONNX 模型，在本机 CPU 上执行。英文、简体中文、繁体中文、日文使用通用模型，韩文使用专用模型。
 
----
+应用不会自动上传截图、API 密钥或日志。第三方翻译服务如何处理发送的文本，请以对应服务的隐私政策为准。完整说明见 [PRIVACY.md](PRIVACY.md)。
 
-## 設定
+## 系统要求
 
-從左側導覽列點擊 **設定**，或於系統匣圖示上按右鍵 → **設定**。所有設定變更都會自動儲存。
+- Windows 10 / 11
+- 安装包已包含所需 .NET 运行环境，无需单独安装 .NET Runtime
 
-![設定頁.png](docs/images/設定頁.png)
+## 开发与构建
 
-| 設定項目 | 說明 |
-|----------|------|
-| 介面語言 | 繁體中文 / English，切換後立即生效（首次啟動時依 Windows 顯示語言決定） |
-| 截圖翻譯 (快捷鍵) | 用於 **截圖翻譯** 功能的快捷鍵 (可自訂修改，預設 `Ctrl + Alt + A`) |
-| 開啟翻譯視窗 (快捷鍵) | 呼叫主視窗的快捷鍵 (預設 `Ctrl + Alt + W`)，會回到上次開啟的頁面；即時翻譯進行中時，改為將浮動視窗列移至最上層 |
-| 暫停 / 繼續 (快捷鍵) | 暫停或繼續 **即時翻譯** (預設 `Ctrl + Alt + S`)；僅在即時翻譯進行中可用，也可用於查看原文 |
-| 取詞翻譯 (快捷鍵) | 開啟 **取詞翻譯** 視窗 (預設 `Ctrl + Alt + Q`)；若已選取文字會自動帶入並翻譯 |
-| 自動翻譯 | **截圖翻譯** 框選完成後 **立即翻譯**，不需要再手動點擊 (預設為關閉) |
-| 開機啟動 | 開機時自動啟動 |
-| 儲存截圖 | 截圖時自動儲存至本機，可自訂儲存位置（預設為關閉） |
-| 來源語言 | **截圖翻譯** 與 **文字翻譯** 的原文語言 (預設 Auto)；即時翻譯的來源語言另外設定 |
-| 翻譯服務設定 | 為需要金鑰或端點的翻譯服務進行設定；使用 OpenAI 時，可設定 API 位址、模型名稱、翻譯提示詞與 Temperature |
-| 主題 | 淺色 / 深色 |
-| 應用紀錄 | 記錄較完整的應用程式資訊，建議僅在問題排查時開啟（預設為關閉） |
+```powershell
+dotnet build src/OverTranslate/OverTranslate.csproj -c Release
+dotnet test tests/OverTranslate.Tests/OverTranslate.Tests.csproj -c Release
+```
 
-> 快捷鍵除了組合鍵，也可以設成單一按鍵，包含 F1 ~ F12、滑鼠中鍵/側鍵與遊戲手把按鍵。
+本项目使用 .NET 8、WPF、RapidOcrNet、GTranslate、NLog 和 Velopack。发布流程见 [docs/ops/PUBLISH.md](docs/ops/PUBLISH.md)。
 
-> Log 僅儲存在本機，不會自動上傳；開啟 **應用紀錄** 後的詳細資訊也同樣只會保留在本機。  
-> 回報問題時，可於設定頁按下 **匯出並上傳診斷資訊**，系統會直接完成上傳，並取得一組回報代碼（可提供給開發者快速比對問題）。
+## 发布渠道
 
----
+GitHub Releases 是当前唯一正式下载和自动更新来源。每次发布由 GitHub Actions 根据版本 tag 构建安装版、免安装版和 Velopack 更新包；服务器目录不再作为客户端默认更新源。
 
-### 翻譯 API
+## 许可证与致谢
 
-> 除了 DeepL 與 OpenAI 以外，其他都是下載後就可以直接使用的功能。
+本项目使用 [GNU GPL-3.0](LICENSE) 许可证。你可以自由使用、修改和分发本软件；分发修改版本时，请遵守 GPL-3.0 并提供相应源代码。
 
-| 服務 | 說明 |
-|------|------|
-| Google 翻譯（RPC） | 新版 RPC 介面 |
-| Google 翻譯（Web） | 傳統 Web 介面 |
-| Bing 翻譯 | 翻譯品質佳 |
-| Microsoft 翻譯 | **(預設)** 穩定性佳、回應速度快 |
-| DeepL | 需至 DeepL 官方註冊並取得 API Key |
-| OpenAI | 支援 OpenAI API 格式，建議使用本地 LLM，可透過 [Ollama](OLLAMA_GUIDE.md) 快速安裝與使用；提示詞與 Temperature 可自訂 |
-  
-提供「自動備援」機制（備援機制適用於 **截圖翻譯** 與 **即時翻譯**）：  
-當某個翻譯無法使用或回應過慢時，會自動切換到其他可用的翻譯 API，實際使用的引擎顯示於工具列。
-![備援.png](docs/images/備援.png)
-
-> 使用 **OpenAI** 時，不會觸發備援機制。
-
-### OpenAI 設定
-
-![OpenAI.png](docs/images/OpenAI.png)
-
-| 項目 | 說明 |
-|------|------|
-| API 位址 | 留空時使用 `http://localhost:11434/v1`（Ollama 的本機預設位址） |
-| 模型名稱 | 留空時使用 `translategemma:4b` |
-| 提示詞 | 留空時使用內建提示詞；可用下方參數代入實際使用的語言 |
-| Temperature | 位於 **進階** 區，影響輸出的隨機程度，範圍 0.0 ~ 2.0（預設 0） |
-
-提示詞可用參數（設定頁的 **可用參數** 區塊也會列出說明與範例）：
-
-| 參數 | 說明 | 範例 |
-|------|------|------|
-| `{source_name}` | 來源語言名稱 | 英語 |
-| `{source_code}` | 來源語言代碼 | en |
-| `{target_name}` | 目標語言名稱 | 日語 |
-| `{target_code}` | 目標語言代碼 | ja |
-
-> 內建提示詞僅使用語言名稱；語言代碼參數可依模型需求自行搭配使用，例如 `{target_name} (target_code)` -> `Japanese (ja)`。
-> 
-> Temperature 取消勾選時 **不會傳送此參數**。不同模型或 API 對 Temperature 的支援與建議值可能不同；若模型文件建議不要傳送此參數，請取消勾選。若在 0 時輸出表現異常，可依模型建議嘗試調高，建議從 0.1 開始逐步調整。
-
-### 多語言 OCR 辨識
-
-OCR 辨識由 RapidOcrNet 搭配 ONNX 模型處理，會依語言自動使用對應模型，不需手動選擇 OCR 引擎。
-
-| 辨識語言 | 辨識模型（rec） |
-|----------|----------------|
-| **英文 / 中文（簡繁）/ 日文** | PP-OCRv6 通用辨識模型（`PP-OCRv6_small_rec`），單一模型支援中、英、日及多種拉丁語系，也能處理常見的中英混排 |
-| **韓文** | PP-OCRv5 韓文辨識模型（`korean_PP-OCRv5_rec`），用於補足 PP-OCRv6 通用模型未涵蓋的韓文字元 |
-
-所有語言共用同一套**文字偵測模型**（`PP-OCRv6_det_tiny`）與**方向分類模型**（`cls`），僅辨識模型會依語言切換。  
-OCR 全程於本機 CPU 執行，不會將圖片上傳至外部服務。
-
----
-
-## 系統需求
-
-- **作業系統**：Windows 10 / 11
-- **執行環境**：安裝檔已內含所需環境，不需另外安裝 .NET Runtime
-
-使用以下翻譯服務時，需另外準備：
-
-- **DeepL**：需至 [DeepL 官網](https://www.deepl.com/pro-api) 申請 API Key
-- **OpenAI**：需自備 OpenAI API 相容服務，本地 LLM 架設使用方式可參考 [Ollama 安裝教學](OLLAMA_GUIDE.md)
-
----
-
-## 支持
-
-本軟體若對你日常或工作使用上有幫助，歡迎透過 [愛發電](https://afdian.com/a/laobai) 支持我 ~ ☕
-
----
-
-## 授權
-
-本專案採用 [GNU General Public License v3.0（GPL-3.0）](https://www.gnu.org/licenses/gpl-3.0.html) 授權。  
-你可以自由使用、修改與散布本軟體；若散布修改後的版本，需依 GPL-3.0 授權條款公開相應的原始碼。  
-完整授權條款請參閱 [LICENSE](LICENSE)。
-
+感谢 [OverTranslate](https://github.com/asd880921/OverTranslate) 上游项目及其贡献者。

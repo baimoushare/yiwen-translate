@@ -1,9 +1,9 @@
-# 打包與發布
+# 打包与发布
 
-發版由 CI 負責：**壓一個 tag，GitHub Actions 打包並建立一個 pre-release**。
-把它轉成正式版是唯一會推給使用者的動作，而且必須由人手動做。
+发布由 CI 负责：**创建一个版本 tag，GitHub Actions 自动打包并创建 pre-release**。
+验证通过后，手动将其转为正式版，这一步才会推送给普通用户。
 
-本專案以 **自封式（self-contained）** 發布，使用者**不需另外安裝 .NET 8 Runtime**。
+本项目使用 **自包含（self-contained）** 发布，用户**无需另外安装 .NET 8 Runtime**。
 
 ---
 
@@ -12,7 +12,7 @@
 ### 1. 調版號並推上 main
 
 ```
-src\OverTranslate\OverTranslate.csproj  →  <Version>2.0.0</Version>
+src\OverTranslate\OverTranslate.csproj  →  <Version>0.0.3</Version>
 ```
 
 > CI 的版號其實**以 tag 為準**，csproj 不參與（不一致只警告）。這一步是為了讓程式碼裡的版號
