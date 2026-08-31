@@ -3,7 +3,21 @@ using System.Text.Json.Serialization;
 namespace OverTranslate.Models;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum TranslationProvider { Google, Google2, Bing, Microsoft, DeepL, OpenAI }
+public enum TranslationProvider
+{
+    Google,
+    Google2,
+    Bing,
+    Microsoft,
+    DeepL,
+    Baidu,
+    Tencent,
+    Youdao,
+    GoogleCloud,
+    AzureTranslator,
+    ChatGPT,
+    OpenAI,
+}
 
 /// <summary>
 /// A user's nudge on top of the automatic OCR-height-to-font-size curve: the overlay already sizes
@@ -162,7 +176,13 @@ public class AppSettings
     public string SourceLanguage { get; set; } = LanguageData.DefaultOcrSourceLanguage;
     public string TargetLanguage { get; set; } = "ZH-HANS";
     public TranslationProvider Provider { get; set; } = TranslationProvider.Microsoft;
+
+    /// <summary>Legacy DeepL API key retained for existing settings files.</summary>
     public string ApiKey { get; set; } = "";
+
+    /// <summary>Credentials for official traditional translation APIs.</summary>
+    public TranslationApiSettings TranslationApis { get; set; } = new();
+
     /// <summary>
     /// The OpenAI-compatible server to talk to, or empty for
     /// <see cref="Services.Providers.OpenAiCompatibleProvider.DefaultBaseUrl"/>.
@@ -198,6 +218,16 @@ public class AppSettings
 
     /// <inheritdoc cref="OpenAiPromptAuto"/>
     public string OpenAiPromptExplicit { get; set; } = "";
+
+    /// <summary>Independent ChatGPT-compatible API configuration.</summary>
+    public string ChatGptBaseUrl { get; set; } = "https://api.openai.com/v1";
+    public string ChatGptApiKey { get; set; } = "";
+    public string ChatGptModel { get; set; } = "gpt-4o-mini";
+    public string ChatGptPromptAuto { get; set; } = "";
+    public string ChatGptPromptExplicit { get; set; } = "";
+    public bool ChatGptTemperatureEnabled { get; set; } = true;
+    public double ChatGptTemperature { get; set; }
+    public int ChatGptTimeoutSeconds { get; set; } = 60;
 
     /// <summary>
     /// The user's own OpenAI-compatible services. Which one (if any) is in force is

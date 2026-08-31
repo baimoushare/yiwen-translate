@@ -55,7 +55,10 @@ public partial class ScreenCaptureWindow : Window
         _physBounds = physBounds;
         InitializeComponent();
 
-        Opacity = 0; // prevent OS white-background flash
+        // Keep the native window transparent until WPF has painted the frozen screenshot. The XAML
+        // background is transparent as well, so the compositor cannot expose a black full-screen
+        // frame while the first bitmap-backed frame is still being prepared.
+        Opacity = 0;
 
         // Provisional: OnSourceInitialized replaces this with the pixel rect the screenshot was
         // captured from. Needed only so the window has a size before its handle exists.
@@ -261,10 +264,12 @@ public partial class ScreenCaptureWindow : Window
     {
         if (!_hasSelection) return null;
 
-        int bmpX = Math.Clamp((int)(Selection.X - _physBounds.Left), 0, _screenshot.Width - 1);
-        int bmpY = Math.Clamp((int)(Selection.Y - _physBounds.Top),  0, _screenshot.Height - 1);
-        int bmpW = Math.Min(Math.Max(1, (int)Selection.Width),  _screenshot.Width  - bmpX);
-        int bmpH = Math.Min(Math.Max(1, (int)Selection.Height), _screenshot.Height - bmpY);
+        int bmpX = Math.Clamp((int)Math.Floor(Selection.X - _physBounds.Left), 0, _screenshot.Width - 1);
+        int bmpY = Math.Clamp((int)Math.Floor(Selection.Y - _physBounds.Top),  0, _screenshot.Height - 1);
+        int right = (int)Math.Ceiling(Selection.Right - _physBounds.Left);
+        int bottom = (int)Math.Ceiling(Selection.Bottom - _physBounds.Top);
+        int bmpW = Math.Min(Math.Max(1, right - bmpX),  _screenshot.Width  - bmpX);
+        int bmpH = Math.Min(Math.Max(1, bottom - bmpY), _screenshot.Height - bmpY);
         if (bmpW <= 0 || bmpH <= 0) return null;
 
         using var crop = _screenshot.Clone(
@@ -360,9 +365,17 @@ public partial class ScreenCaptureWindow : Window
     {
         double absPhysX = _physBounds.Left + _selectionWpfRect.X * _dpiX;
         double absPhysY = _physBounds.Top  + _selectionWpfRect.Y * _dpiY;
-        int bmpW = Math.Max(1, (int)(_selectionWpfRect.Width  * _dpiX));
-        int bmpH = Math.Max(1, (int)(_selectionWpfRect.Height * _dpiY));
-        Selection = new Rect(absPhysX, absPhysY, bmpW, bmpH);
+        double absPhysRight = _physBounds.Left + _selectionWpfRect.Right * _dpiX;
+        double absPhysBottom = _physBounds.Top + _selectionWpfRect.Bottom * _dpiY;
+        int bmpX = (int)Math.Floor(absPhysX);
+        int bmpY = (int)Math.Floor(absPhysY);
+        int bmpRight = (int)Math.Ceiling(absPhysRight);
+        int bmpBottom = (int)Math.Ceiling(absPhysBottom);
+        Selection = new Rect(
+            _physBounds.Left + bmpX,
+            _physBounds.Top + bmpY,
+            Math.Max(1, bmpRight - bmpX),
+            Math.Max(1, bmpBottom - bmpY));
     }
 
     private bool TryCreateCroppedBitmap()

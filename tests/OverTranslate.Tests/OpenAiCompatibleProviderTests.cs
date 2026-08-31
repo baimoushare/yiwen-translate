@@ -74,9 +74,10 @@ public class OpenAiCompatibleProviderTests
             // Names alone, no tags: the shipped default is tuned for the model this provider ships
             // against, and the tags are there for a template someone writes themselves.
             Assert.Contains($"從(各種語言)翻譯成({targetName})", prompt);
-            Assert.Contains("只回傳自然、人性化的翻譯結果", prompt);
+            Assert.Contains("只回傳譯文", prompt);
+            Assert.Contains("不要解釋、道歉、提問", prompt);
             Assert.DoesNotContain("JSON", prompt);
-            Assert.True(prompt.Length <= 80);
+            Assert.True(prompt.Length <= 180);
         });
     }
 
@@ -92,9 +93,10 @@ public class OpenAiCompatibleProviderTests
             var prompt = OpenAiCompatibleProvider.BuildPrompt("AUTO", targetCode);
 
             Assert.Contains($"从(各种语言)翻译成({targetName})", prompt);
-            Assert.Contains("只返回自然、人性化的翻译结果", prompt);
+            Assert.Contains("只返回译文", prompt);
+            Assert.Contains("不要解释、致歉、提问", prompt);
             Assert.DoesNotContain("回傳", prompt);
-            Assert.True(prompt.Length <= 80);
+            Assert.True(prompt.Length <= 190);
         });
     }
 
@@ -137,7 +139,7 @@ public class OpenAiCompatibleProviderTests
             // Compared as "same opening, same closing instruction" rather than by splitting on the
             // first bracket, which stopped isolating the skeleton once the language tag brought a
             // bracket of its own.
-            const string tail = "。不要思考或加入額外文字，只回傳自然、人性化的翻譯結果。";
+            const string tail = "。只回傳譯文；不要解釋、道歉、提問或加入任何其他文字；輸入沒有有效文字時只回傳空字串。";
 
             Assert.StartsWith("從", automatic);
             Assert.StartsWith("從", chosen);
@@ -160,7 +162,8 @@ public class OpenAiCompatibleProviderTests
             var prompt = OpenAiCompatibleProvider.BuildPrompt(sourceCode, targetCode);
 
             Assert.Contains($"from ({sourceName}) to ({targetName})", prompt);
-            Assert.Contains("Return only a natural, human-sounding translation", prompt);
+            Assert.Contains("Return only the translation", prompt);
+            Assert.Contains("do not explain, apologize, ask questions", prompt);
             Assert.DoesNotContain("只回傳", prompt);
         });
     }
@@ -173,7 +176,8 @@ public class OpenAiCompatibleProviderTests
             var prompt = OpenAiCompatibleProvider.BuildPrompt("AUTO", "EN-US");
 
             Assert.Contains("from (any language) to (English)", prompt);
-            Assert.Contains("Return only a natural, human-sounding translation", prompt);
+            Assert.Contains("Return only the translation", prompt);
+            Assert.Contains("do not explain, apologize, ask questions", prompt);
         });
     }
 
@@ -599,6 +603,24 @@ public class OpenAiCompatibleProviderTests
 
         var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             provider.TranslateAsync([new OcrTextBlock("hello", new Rect())], "JA", "ZH-HANT", ""));
+
+        Assert.Equal(LocalizationService.Get("S.Error.OpenAiNoTranslation"), error.Message);
+    }
+
+    [Theory]
+    [InlineData("好的，请提供需要翻译的内容。")]
+    [InlineData("请提供需要翻译的内容")]
+    [InlineData("Please provide the text to translate.")]
+    [InlineData("抱歉，我无法翻译这段内容")]
+    public async Task ConversationalFallbackAnswerIsRejected(string response)
+    {
+        var json = $"{{\"choices\":[{{\"message\":{{\"content\":{JsonSerializer.Serialize(response)}}}}}]}}";
+        using var http = new HttpClient(new StaticResponseHandler(HttpStatusCode.OK, json));
+        var provider = new OpenAiCompatibleProvider(
+            http, () => new OpenAiCompatibleOptions("http://localhost:11434/v1", "local-model"));
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.TranslateAsync([new OcrTextBlock("hello", new Rect())], "EN", "ZH-HANS", ""));
 
         Assert.Equal(LocalizationService.Get("S.Error.OpenAiNoTranslation"), error.Message);
     }

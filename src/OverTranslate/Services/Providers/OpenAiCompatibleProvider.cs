@@ -47,6 +47,12 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
         @"<think(?:\s[^>]*)?>.*?</think\s*>",
         RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant);
 
+    // 兼容接口上的通用对话模型在输入为空、乱码或上下文不足时，常会返回礼貌性询问。
+    // 这类文本不是译文，若直接透传到覆盖层，就会看起来像软件自己弹出的提示。
+    private static readonly Regex NonTranslationReply = new(
+        @"^(?:好的?[，,。.!！]?\s*)?(?:请|需要|麻烦)(?:提供|输入|发送|给出).{0,80}(?:翻译|内容|文本|文字).*[。.!！?？]?$|^(?:我无法|无法|抱歉|对不起).{0,80}(?:翻译|处理|识别).*$|^(?:please\s+)?(?:provide|enter|send|give)\s+(?:the\s+)?(?:text|content)\s*(?:to\s+translate)?[.!?]?$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline);
+
     private readonly HttpClient _http;
     private readonly Func<OpenAiCompatibleOptions> _options;
 
@@ -218,7 +224,7 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
         }
 
         var translated = StripThinking(content);
-        if (translated.Length == 0)
+        if (translated.Length == 0 || NonTranslationReply.IsMatch(translated))
             throw new InvalidOperationException(LocalizationService.Get("S.Error.OpenAiNoTranslation"));
         return translated;
     }
@@ -547,19 +553,19 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
         {
             LocalizationService.SimplifiedChinese => automatic
                 ? $"从(各种语言)翻译成({TargetPlaceholder})。" +
-                  "不要思考或加入额外文字，只返回自然、人性化的翻译结果。"
+                  "只返回译文；不要解释、致歉、提问或添加任何其他文字；输入没有有效文字时只返回空字符串。"
                 : $"从({SourcePlaceholder})翻译成({TargetPlaceholder})。" +
-                  "不要思考或加入额外文字，只返回自然、人性化的翻译结果。",
+                  "只返回译文；不要解释、致歉、提问或添加任何其他文字；输入没有有效文字时只返回空字符串。",
             LocalizationService.English => automatic
                 ? $"Translate the input text from (any language) to ({TargetPlaceholder}). " +
-                  "Do not think or add extra text. Return only a natural, human-sounding translation."
+                  "Return only the translation; do not explain, apologize, ask questions, or add any other text. Return an empty string when there is no valid text."
                 : $"Translate the input text from ({SourcePlaceholder}) to ({TargetPlaceholder}). " +
-                  "Do not think or add extra text. Return only a natural, human-sounding translation.",
+                  "Return only the translation; do not explain, apologize, ask questions, or add any other text. Return an empty string when there is no valid text.",
             _ => automatic
                 ? $"從(各種語言)翻譯成({TargetPlaceholder})。" +
-                  "不要思考或加入額外文字，只回傳自然、人性化的翻譯結果。"
+                  "只回傳譯文；不要解釋、道歉、提問或加入任何其他文字；輸入沒有有效文字時只回傳空字串。"
                 : $"從({SourcePlaceholder})翻譯成({TargetPlaceholder})。" +
-                  "不要思考或加入額外文字，只回傳自然、人性化的翻譯結果。",
+                  "只回傳譯文；不要解釋、道歉、提問或加入任何其他文字；輸入沒有有效文字時只回傳空字串。",
         };
 
     /// <summary>

@@ -350,6 +350,20 @@
     <sys:String x:Key="S.Provider.DeepLHint">需至 DeepL 官方註冊並取得 API Key</sys:String>
     <sys:String x:Key="S.Provider.OpenAI">OpenAI</sys:String>
     <sys:String x:Key="S.Provider.OpenAIHint">支援 OpenAI API 格式，建議使用本地 LLM，可透過 Ollama 快速安裝與使用。</sys:String>
+    <sys:String x:Key="S.Provider.ChatGPT">ChatGPT</sys:String>
+    <sys:String x:Key="S.Provider.ChatGPTHint">獨立的 OpenAI 相容介面設定。</sys:String>
+    <sys:String x:Key="S.Provider.Baidu">百度翻譯</sys:String>
+    <sys:String x:Key="S.Provider.BaiduHint">需要百度翻譯的 App ID 和 Secret Key。</sys:String>
+    <sys:String x:Key="S.Provider.Tencent">騰訊雲翻譯</sys:String>
+    <sys:String x:Key="S.Provider.TencentHint">需要 SecretId、SecretKey 和地區。</sys:String>
+    <sys:String x:Key="S.Provider.Youdao">有道翻譯</sys:String>
+    <sys:String x:Key="S.Provider.YoudaoHint">需要應用 ID 和應用密鑰。</sys:String>
+    <sys:String x:Key="S.Provider.GoogleCloud">Google Cloud 翻譯</sys:String>
+    <sys:String x:Key="S.Provider.GoogleCloudHint">需要 Google Cloud API Key。</sys:String>
+    <sys:String x:Key="S.Provider.AzureTranslator">Microsoft Azure 翻譯</sys:String>
+    <sys:String x:Key="S.Provider.AzureTranslatorHint">需要訂閱金鑰和地區。</sys:String>
+    <sys:String x:Key="S.Provider.Group.Traditional">傳統翻譯</sys:String>
+    <sys:String x:Key="S.Provider.Group.AI">AI 翻譯</sys:String>
 
     <!-- ── Settings page ── -->
 

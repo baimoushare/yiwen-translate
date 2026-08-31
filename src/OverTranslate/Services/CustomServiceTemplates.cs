@@ -39,6 +39,11 @@ public record CustomServiceTemplate(
         new("硅基流动",       "https://api.siliconflow.cn/v1", "Qwen/Qwen2.5-7B-Instruct", "S", "#7C3AED"),
         new("OpenRouter",     "https://openrouter.ai/api/v1", "google/gemini-2.0-flash-001", "O", "#6467F2"),
         new("Grok (xAI)",     "https://api.x.ai/v1", "grok-2-latest", "G", "#101418"),
+        // Coding Plan 端点和模型可能随套餐调整，模板只提供可编辑的默认值。
+        new("智谱 GLM Coding Plan", "https://open.bigmodel.cn/api/paas/v4", "glm-4.5-air", "智", "#3859FF"),
+        new("Kimi Coding Plan", "https://api.moonshot.cn/v1", "kimi-k2-0711-preview", "K", "#1F232B"),
+        new("硅基流动 Coding Plan", "https://api.siliconflow.cn/v1", "Qwen/Qwen3-30B-A3B", "S", "#7C3AED"),
+        new("千问 Coding Plan", "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-plus", "Q", "#1677FF"),
         new("空白",           "", ""),
     ];
 

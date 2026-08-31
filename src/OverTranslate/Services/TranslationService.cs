@@ -24,7 +24,21 @@ public class TranslationService
     private readonly GTranslateProvider _bing      = new(new BingTranslator(Http));
     private readonly GTranslateProvider _microsoft = new(new MicrosoftTranslator(Http));
     private readonly DeepLProvider      _deepL     = new();
+    private readonly BaiduProvider      _baidu     = new();
+    private readonly TencentProvider    _tencent   = new();
+    private readonly YoudaoProvider     _youdao    = new();
+    private readonly GoogleCloudProvider _googleCloud = new();
+    private readonly AzureTranslatorProvider _azure = new();
     private readonly OpenAiCompatibleProvider _openAi = new();
+    private readonly OpenAiCompatibleProvider _chatGpt = new(options: () =>
+    {
+        var s = SettingsService.Instance.Current;
+        return new OpenAiCompatibleOptions(
+            s.ChatGptBaseUrl, s.ChatGptModel, s.ChatGptApiKey,
+            s.ChatGptPromptAuto, s.ChatGptPromptExplicit,
+            s.ChatGptTemperatureEnabled, s.ChatGptTemperature,
+            s.ChatGptTimeoutSeconds);
+    });
 
     // Per-engine resilient wrappers: the user's choice is the primary, the other reliable
     // keyless engines act as hedged backups so one slow/throttled endpoint can't stall the batch.
@@ -86,9 +100,15 @@ public class TranslationService
         TranslationProvider.Google    => _googleR,
         TranslationProvider.Bing      => _bingR,
         TranslationProvider.Microsoft => _microsoftR,
-        TranslationProvider.DeepL     => _deepL,
-        TranslationProvider.OpenAI    => _openAi,
-        _                             => _google2R,
+        TranslationProvider.DeepL          => _deepL,
+        TranslationProvider.Baidu          => _baidu,
+        TranslationProvider.Tencent        => _tencent,
+        TranslationProvider.Youdao         => _youdao,
+        TranslationProvider.GoogleCloud    => _googleCloud,
+        TranslationProvider.AzureTranslator => _azure,
+        TranslationProvider.ChatGPT        => _chatGpt,
+        TranslationProvider.OpenAI         => _openAi,
+        _                                  => _google2R,
     };
 
     // Single chosen engine, no hedging/fallback — a timeout/failure surfaces directly to the caller.
@@ -97,9 +117,15 @@ public class TranslationService
         TranslationProvider.Google    => _google,
         TranslationProvider.Bing      => _bing,
         TranslationProvider.Microsoft => _microsoft,
-        TranslationProvider.DeepL     => _deepL,
-        TranslationProvider.OpenAI    => _openAi,
-        _                             => _google2,
+        TranslationProvider.DeepL          => _deepL,
+        TranslationProvider.Baidu          => _baidu,
+        TranslationProvider.Tencent        => _tencent,
+        TranslationProvider.Youdao         => _youdao,
+        TranslationProvider.GoogleCloud    => _googleCloud,
+        TranslationProvider.AzureTranslator => _azure,
+        TranslationProvider.ChatGPT        => _chatGpt,
+        TranslationProvider.OpenAI         => _openAi,
+        _                                  => _google2,
     };
 
     public bool RequiresApiKey => ActiveCustom is not null

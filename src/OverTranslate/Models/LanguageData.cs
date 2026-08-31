@@ -72,10 +72,12 @@ public record LangItem(
 /// Resolving in the properties means callers still just read <see cref="Display"/>.
 /// </remarks>
 public record ProviderItem(
-    TranslationProvider Provider, string DisplayKey, bool RequiresApiKey, string? HintKey = null)
+    TranslationProvider Provider, string DisplayKey, bool RequiresApiKey, string? HintKey = null,
+    string GroupKey = "S.Provider.Group.Traditional")
 {
     public string Display => LocalizationService.Get(DisplayKey);
     public string? Hint => HintKey is null ? null : LocalizationService.Get(HintKey);
+    public string Group => LocalizationService.Get(GroupKey);
 }
 
 public static class LanguageData
@@ -138,12 +140,18 @@ public static class LanguageData
 
     public static readonly List<ProviderItem> Providers =
     [
-        new(TranslationProvider.Google,    "S.Provider.Google",    false, "S.Provider.GoogleHint"),
-        new(TranslationProvider.Google2,   "S.Provider.Google2",   false, "S.Provider.Google2Hint"),
-        new(TranslationProvider.Bing,      "S.Provider.Bing",      false),
-        new(TranslationProvider.Microsoft, "S.Provider.Microsoft", false),
-        new(TranslationProvider.DeepL,     "S.Provider.DeepL",     true,  "S.Provider.DeepLHint"),
-        new(TranslationProvider.OpenAI,    "S.Provider.OpenAI",    false, "S.Provider.OpenAIHint"),
+        new(TranslationProvider.Google,          "S.Provider.Google",          false, "S.Provider.GoogleHint"),
+        new(TranslationProvider.Google2,         "S.Provider.Google2",         false, "S.Provider.Google2Hint"),
+        new(TranslationProvider.Bing,            "S.Provider.Bing",            false),
+        new(TranslationProvider.Microsoft,       "S.Provider.Microsoft",       false),
+        new(TranslationProvider.DeepL,           "S.Provider.DeepL",           true,  "S.Provider.DeepLHint"),
+        new(TranslationProvider.Baidu,           "S.Provider.Baidu",           true,  "S.Provider.BaiduHint"),
+        new(TranslationProvider.Tencent,         "S.Provider.Tencent",         true,  "S.Provider.TencentHint"),
+        new(TranslationProvider.Youdao,          "S.Provider.Youdao",          true,  "S.Provider.YoudaoHint"),
+        new(TranslationProvider.GoogleCloud,     "S.Provider.GoogleCloud",     true,  "S.Provider.GoogleCloudHint"),
+        new(TranslationProvider.AzureTranslator,"S.Provider.AzureTranslator",  true,  "S.Provider.AzureTranslatorHint"),
+        new(TranslationProvider.ChatGPT,         "S.Provider.ChatGPT",         true,  "S.Provider.ChatGPTHint", "S.Provider.Group.AI"),
+        new(TranslationProvider.OpenAI,          "S.Provider.OpenAI",          false, "S.Provider.OpenAIHint", "S.Provider.Group.AI"),
     ];
 
     /// <summary>

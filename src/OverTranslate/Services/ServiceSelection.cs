@@ -10,7 +10,9 @@ namespace OverTranslate.Services;
 /// One string so every picker — translation page, quick lookup, capture toolbar — can hold its
 /// selection in one field regardless of which kind of service it points at.
 /// </param>
-public record ServiceOption(string Value, string Display, bool RequiresSetup, bool IsCustom);
+public record ServiceOption(
+    string Value, string Display, bool RequiresSetup, bool IsCustom,
+    string Group = "传统翻译");
 
 /// <summary>
 /// The one place that knows a picker's selection resolves to a built-in provider or to one of the
@@ -33,7 +35,8 @@ public static class ServiceSelection
     {
         var options = LanguageData.Providers
             .Select(p => new ServiceOption(
-                p.Provider.ToString(), p.Display, p.RequiresApiKey, IsCustom: false))
+                p.Provider.ToString(), p.Display, p.RequiresApiKey, IsCustom: false,
+                Group: p.Group))
             .ToList();
 
         foreach (var service in SettingsService.Instance.Current.CustomServices)
@@ -42,7 +45,8 @@ public static class ServiceSelection
             if (name.Length == 0) name = LocalizationService.Get("S.Services.CustomUntitled");
             options.Add(new ServiceOption(
                 CustomPrefix + service.Id, name,
-                RequiresSetup: false, IsCustom: true));
+                RequiresSetup: false, IsCustom: true,
+                Group: "AI 翻译"));
         }
 
         return options;

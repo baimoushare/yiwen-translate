@@ -330,6 +330,20 @@ Leave a little room around the whole area; box several areas separately rather t
     <sys:String x:Key="S.Provider.DeepLHint">Requires an API key from DeepL</sys:String>
     <sys:String x:Key="S.Provider.OpenAI">OpenAI</sys:String>
     <sys:String x:Key="S.Provider.OpenAIHint">Any OpenAI-compatible API. A local LLM is recommended — Ollama is the quickest way to set one up.</sys:String>
+    <sys:String x:Key="S.Provider.ChatGPT">ChatGPT</sys:String>
+    <sys:String x:Key="S.Provider.ChatGPTHint">Independent OpenAI-compatible API configuration.</sys:String>
+    <sys:String x:Key="S.Provider.Baidu">Baidu Translate</sys:String>
+    <sys:String x:Key="S.Provider.BaiduHint">Requires App ID and Secret Key from Baidu Translate.</sys:String>
+    <sys:String x:Key="S.Provider.Tencent">Tencent Cloud Translate</sys:String>
+    <sys:String x:Key="S.Provider.TencentHint">Requires SecretId, SecretKey and region.</sys:String>
+    <sys:String x:Key="S.Provider.Youdao">Youdao Translation</sys:String>
+    <sys:String x:Key="S.Provider.YoudaoHint">Requires application key and secret.</sys:String>
+    <sys:String x:Key="S.Provider.GoogleCloud">Google Cloud Translation</sys:String>
+    <sys:String x:Key="S.Provider.GoogleCloudHint">Requires a Google Cloud API key.</sys:String>
+    <sys:String x:Key="S.Provider.AzureTranslator">Microsoft Azure Translator</sys:String>
+    <sys:String x:Key="S.Provider.AzureTranslatorHint">Requires subscription key and region.</sys:String>
+    <sys:String x:Key="S.Provider.Group.Traditional">Traditional translation</sys:String>
+    <sys:String x:Key="S.Provider.Group.AI">AI translation</sys:String>
 
     <!-- ── Settings page ── -->
 
