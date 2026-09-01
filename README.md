@@ -37,9 +37,16 @@
 
 关闭主窗口后，应用可以继续驻留在系统托盘。按下快捷键（默认 `Ctrl + Alt + D`），框选需要翻译的区域即可。
 
-| 原文 | 翻译结果 |
-|------|----------|
-| ![截图翻译1-前.png](docs/images/截图翻译1-前.png) | ![截图翻译1-后.png](docs/images/截图翻译1-后.png) |
+<table>
+  <tr>
+    <th width="50%">原文</th>
+    <th width="50%">翻译结果</th>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/截图翻译1-前.png" width="100%" alt="截图翻译原文"/></td>
+    <td width="50%"><img src="docs/images/截图翻译1-后.png" width="100%" alt="截图翻译结果"/></td>
+  </tr>
+</table>
 
 
 ### 实时翻译
@@ -52,9 +59,16 @@
 
 - **字幕 / 对话**：适合字幕和游戏对话等位置相对固定的文字，建议使用一个区域。
 
-| 原文 | 翻译结果 |
-|------|----------|
-| ![影视实时翻译-前.png](docs/images/影视实时翻译-前.png) | ![影视实时翻译-后.png](docs/images/影视实时翻译-后.png) |
+<table>
+  <tr>
+    <th width="50%">原文</th>
+    <th width="50%">翻译结果</th>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/影视实时翻译-前.png" width="100%" alt="影视实时翻译原文"/></td>
+    <td width="50%"><img src="docs/images/影视实时翻译-后.png" width="100%" alt="影视实时翻译结果"/></td>
+  </tr>
+</table>
 
 - **游戏 / UI**：适合游戏菜单、提示和位置分散的界面文字，建议使用一到两个区域。
 
