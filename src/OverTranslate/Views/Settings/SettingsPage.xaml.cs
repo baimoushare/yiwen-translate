@@ -399,22 +399,30 @@ public partial class SettingsPage : UserControl
         var settings = SettingsService.Instance.Current;
         var active = ServiceSelection.CurrentValue();
 
+        TraditionalCardHost.Children.Clear();
         PresetCardHost.Children.Clear();
         CustomCardHost.Children.Clear();
 
-        // 内置:DeepL 与 OpenAI 兼容(本地)。两者映射到 TranslationProvider 枚举。
-        PresetCardHost.Children.Add(BuildDeepLCard(settings, active));
-        PresetCardHost.Children.Add(BuildOpenAiCard(settings, active));
+        // 传统翻译官方/免 Key 服务与 AI 服务分开呈现，避免用户把计费 API 与网页链路混淆。
+        TraditionalCardHost.Children.Add(BuildDeepLCard(settings, active));
+        foreach (var provider in new[] { TranslationProvider.Baidu, TranslationProvider.Tencent,
+                                         TranslationProvider.Youdao, TranslationProvider.GoogleCloud,
+                                         TranslationProvider.AzureTranslator })
+            TraditionalCardHost.Children.Add(BuildTraditionalCard(provider, settings, active));
 
-        // 预设厂商:按端点认领已添加的服务,认领的不再进自定义区。多个服务指向同一端点时,
-        // 第一个上卡,其余的照旧在自定义区各占一张——删掉任何一个都不影响另一个。
+        PresetCardHost.Children.Add(BuildOpenAiCard(settings, active));
+        PresetCardHost.Children.Add(BuildChatGptCard(settings, active));
+
+        // 预设厂商:按供应商认领已添加的服务(任一套餐端点都算),认领的不再进自定义区。
+        // 多个服务同属一个供应商时,第一个上卡,其余的照旧在自定义区各占一张——删掉任何一
+        // 个都不影响另一个。
         var claimed = new HashSet<CustomTranslatorService>();
-        foreach (var template in CustomServiceTemplate.Presets)
+        foreach (var template in CustomServiceTemplate.VendorCards)
         {
             if (template.Initial.Length == 0) continue; // 「空白」没有卡
 
             var service = settings.CustomServices.FirstOrDefault(
-                c => CustomServiceTemplate.SameEndpoint(c.BaseUrl, template.BaseUrl));
+                c => CustomServiceTemplate.BelongsToVendor(c.BaseUrl, template.Vendor));
             if (service is not null) claimed.Add(service);
 
             PresetCardHost.Children.Add(BuildPresetCard(template, service, active));
@@ -443,6 +451,41 @@ public partial class SettingsPage : UserControl
                     (_, _) => UseService(nameof(TranslationProvider.DeepL))),
                 new CardAction("\uE713", "S.Common.Configure",
                     (_, _) => ConfigureBuiltIn(TranslationProvider.DeepL)),
+            ]);
+    }
+
+    private Border BuildTraditionalCard(TranslationProvider provider, AppSettings s, string active)
+    {
+        var configured = provider switch
+        {
+            TranslationProvider.Baidu => !string.IsNullOrWhiteSpace(s.TranslationApis.BaiduAppId) && !string.IsNullOrWhiteSpace(s.TranslationApis.BaiduSecretKey),
+            TranslationProvider.Tencent => !string.IsNullOrWhiteSpace(s.TranslationApis.TencentSecretId) && !string.IsNullOrWhiteSpace(s.TranslationApis.TencentSecretKey),
+            TranslationProvider.Youdao => !string.IsNullOrWhiteSpace(s.TranslationApis.YoudaoAppKey) && !string.IsNullOrWhiteSpace(s.TranslationApis.YoudaoAppSecret),
+            TranslationProvider.GoogleCloud => !string.IsNullOrWhiteSpace(s.TranslationApis.GoogleCloudApiKey),
+            TranslationProvider.AzureTranslator => !string.IsNullOrWhiteSpace(s.TranslationApis.AzureSubscriptionKey),
+            _ => false,
+        };
+        var item = LanguageData.Providers.First(p => p.Provider == provider);
+        return BuildCard(
+            LetterTile(item.Display[..1], "#64748B", false), item.Display,
+            configured ? "S.Settings.ServiceReady" : "S.Settings.ServiceNeedsSetup",
+            configured ? "AppAccent" : "AppWarning", active == provider.ToString(),
+            [
+                new CardAction("\uE73E", "S.Custom.UseButton", (_, _) => UseService(provider.ToString())),
+                new CardAction("\uE713", "S.Common.Configure", (_, _) => ConfigureBuiltIn(provider)),
+            ]);
+    }
+
+    private Border BuildChatGptCard(AppSettings s, string active)
+    {
+        var configured = !string.IsNullOrWhiteSpace(s.ChatGptApiKey);
+        return BuildCard(
+            LetterTile("C", "#10A37F", false), LocalizationService.Get("S.Provider.ChatGPT"),
+            configured ? "S.Settings.ServiceReady" : "S.Settings.ServiceNeedsSetup",
+            configured ? "AppAccent" : "AppWarning", active == nameof(TranslationProvider.ChatGPT),
+            [
+                new CardAction("\uE73E", "S.Custom.UseButton", (_, _) => UseService(nameof(TranslationProvider.ChatGPT))),
+                new CardAction("\uE713", "S.Common.Configure", (_, _) => ConfigureBuiltIn(TranslationProvider.ChatGPT)),
             ]);
     }
 

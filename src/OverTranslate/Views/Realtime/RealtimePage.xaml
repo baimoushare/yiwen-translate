@@ -78,7 +78,18 @@
                                 <TextBlock Text="{DynamicResource S.Realtime.Provider}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
                                 <ComboBox x:Name="ProviderBox"
                                           Style="{StaticResource ModernComboBox}"
-                                          SelectedValuePath="Provider"/>
+                                          SelectedValuePath="Value">
+                                    <ComboBox.GroupStyle>
+                                        <GroupStyle>
+                                            <GroupStyle.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource AppAccent}" Margin="6,8,6,3"/>
+                                                </DataTemplate>
+                                            </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                    </ComboBox.GroupStyle>
+                                </ComboBox>
                                 <TextBlock x:Name="ProviderHint"
                                            Style="{StaticResource FieldHint}"
                                            Margin="0,6,0,0" TextWrapping="Wrap" LineHeight="16"/>

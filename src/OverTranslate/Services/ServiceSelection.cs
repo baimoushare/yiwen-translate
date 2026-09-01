@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Windows.Controls;
+using System.Windows.Data;
 using OverTranslate.Models;
 
 namespace OverTranslate.Services;
@@ -12,7 +15,11 @@ namespace OverTranslate.Services;
 /// </param>
 public record ServiceOption(
     string Value, string Display, bool RequiresSetup, bool IsCustom,
-    string Group = "传统翻译");
+    string? Hint = null,
+    string GroupKey = "S.Provider.Group.Traditional")
+{
+    public string Group => LocalizationService.Get(GroupKey);
+}
 
 /// <summary>
 /// The one place that knows a picker's selection resolves to a built-in provider or to one of the
@@ -36,7 +43,7 @@ public static class ServiceSelection
         var options = LanguageData.Providers
             .Select(p => new ServiceOption(
                 p.Provider.ToString(), p.Display, p.RequiresApiKey, IsCustom: false,
-                Group: p.Group))
+                Hint: p.Hint, GroupKey: p.GroupKey))
             .ToList();
 
         foreach (var service in SettingsService.Instance.Current.CustomServices)
@@ -46,10 +53,25 @@ public static class ServiceSelection
             options.Add(new ServiceOption(
                 CustomPrefix + service.Id, name,
                 RequiresSetup: false, IsCustom: true,
-                Group: "AI 翻译"));
+                GroupKey: "S.Provider.Group.AI"));
         }
 
         return options;
+    }
+
+    /// <summary>Returns all options as a grouped WPF view for ComboBox menus.</summary>
+    public static ICollectionView GroupedOptions() => GroupedView(Options());
+
+    /// <summary>Returns built-in options as a grouped WPF view.</summary>
+    public static ICollectionView GroupedBuiltInOptions() =>
+        GroupedView(Options().Where(option => !option.IsCustom).ToList());
+
+    private static ICollectionView GroupedView(IEnumerable<ServiceOption> options)
+    {
+        var view = CollectionViewSource.GetDefaultView(options.ToList());
+        view.GroupDescriptions.Clear();
+        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ServiceOption.Group)));
+        return view;
     }
 
     /// <summary>The encoded value of the service the shared preference currently names.</summary>

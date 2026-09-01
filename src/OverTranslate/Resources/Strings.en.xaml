@@ -133,6 +133,7 @@ Translation failed: {1}</sys:String>
     <sys:String x:Key="S.QuickLookup.Unpin">Unpin</sys:String>
     <sys:String x:Key="S.QuickLookup.Copy">Copy</sys:String>
     <sys:String x:Key="S.QuickLookup.Copied">Copied</sys:String>
+    <sys:String x:Key="S.QuickLookup.CopyFailed">Copy failed</sys:String>
     <sys:String x:Key="S.QuickLookup.SpeakSource">Read the original</sys:String>
     <sys:String x:Key="S.QuickLookup.SpeakSourceTip">Read the original aloud</sys:String>
     <!-- Automatic is not switched off here the way it is on the text translation page: once the
@@ -382,6 +383,7 @@ Leave a little room around the whole area; box several areas separately rather t
     <sys:String x:Key="S.Settings.ServiceDefault">Using defaults</sys:String>
     <sys:String x:Key="S.Settings.ServiceDialogTitle">{0} settings</sys:String>
     <sys:String x:Key="S.Settings.ApiBaseUrl">API URL</sys:String>
+    <sys:String x:Key="S.Settings.TraditionalApiHint">Enter the credentials required by this translation platform.</sys:String>
     <sys:String x:Key="S.Settings.ModelName">Model</sys:String>
     <sys:String x:Key="S.Settings.OllamaGuide">Local LLM (Ollama) setup guide</sys:String>
     <sys:String x:Key="S.Settings.PromptAuto">Auto-detect prompt</sys:String>

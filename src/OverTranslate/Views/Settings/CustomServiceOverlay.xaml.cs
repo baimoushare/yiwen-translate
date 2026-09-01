@@ -37,7 +37,6 @@ public partial class CustomServiceOverlay : UserControl
     public CustomServiceOverlay()
     {
         InitializeComponent();
-        BuildTemplateStrip();
 
         // The listing answers the values currently on this form, saved or not — a key that was
         // just typed is as good as one that was stored.
@@ -71,6 +70,8 @@ public partial class CustomServiceOverlay : UserControl
         // 预填内置默认提示词：两个框都不再从空白开始，“留空等于默认”的约定改成看得见的文字
         PromptAutoBox.Text = OpenAiCompatibleProvider.DefaultPromptTemplate(automatic: true);
         PromptExplicitBox.Text = OpenAiCompatibleProvider.DefaultPromptTemplate(automatic: false);
+
+        BuildTemplateStrip(CustomServiceTemplate.OptionsFor(template));
 
         if (template is null)
         {
@@ -128,9 +129,10 @@ public partial class CustomServiceOverlay : UserControl
 
     // ── Template strip ─────────────────────────────────────────────────────
 
-    private void BuildTemplateStrip()
+    private void BuildTemplateStrip(IEnumerable<CustomServiceTemplate> templates)
     {
-        foreach (var template in CustomServiceTemplate.Presets)
+        TemplateList.Children.Clear();
+        foreach (var template in templates)
         {
             var button = new Button
             {
@@ -160,7 +162,7 @@ public partial class CustomServiceOverlay : UserControl
     private void ApplyTemplate(CustomServiceTemplate template)
     {
         _pickedTemplate = template;
-        NameBox.Text = template.Name == "空白" ? "" : template.Name;
+        NameBox.Text = template.Plan == CustomServicePlan.Blank ? "" : template.Name;
         BaseUrlBox.Text = template.BaseUrl;
         ModelField.Text = template.Model;
     }

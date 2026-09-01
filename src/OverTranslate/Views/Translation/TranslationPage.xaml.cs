@@ -328,7 +328,7 @@ public partial class TranslationPage : UserControl
         if (string.IsNullOrWhiteSpace(text)) return;
 
         var apiKey = SettingsService.Instance.Current.ApiKey;
-        if (_translationService.RequiresApiKey && string.IsNullOrWhiteSpace(apiKey))
+        if (!_translationService.HasConfiguredCurrentApiKey)
         {
             SetStatus(LocalizationService.Get("S.Translation.MissingApiKey"), isError: true);
             ShowRetry(false);
@@ -507,7 +507,7 @@ public partial class TranslationPage : UserControl
     {
         LocalizationService.BindLocalizedItems(SrcLangBox,  LanguageData.SourceLanguages);
         LocalizationService.BindLocalizedItems(TgtLangBox,  LanguageData.TargetLanguages);
-        LocalizationService.BindLocalizedItems(ProviderBox, ServiceSelection.Options());
+        LocalizationService.BindLocalizedItems(ProviderBox, ServiceSelection.GroupedOptions());
 
         SrcLangBox.SelectedValue  = LanguageData.GetValidSourceCode(sourceLang);
         TgtLangBox.SelectedValue  = LanguageData.GetValidTargetCode(targetLang);

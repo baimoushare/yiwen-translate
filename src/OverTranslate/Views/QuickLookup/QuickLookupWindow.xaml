@@ -497,7 +497,18 @@
                                           Grid.Column="1"
                                           Style="{StaticResource ModernComboBox}"
                                           Width="180" Height="30"
-                                          SelectedValuePath="Value"/>
+                                          SelectedValuePath="Value">
+                                    <ComboBox.GroupStyle>
+                                        <GroupStyle>
+                                            <GroupStyle.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource AppAccent}" Margin="6,8,6,3"/>
+                                                </DataTemplate>
+                                            </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                    </ComboBox.GroupStyle>
+                                </ComboBox>
                             </Grid>
 
                             <Rectangle Height="1" Fill="{DynamicResource AppSeparator}" Margin="0,0,0,12"/>

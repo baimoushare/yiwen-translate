@@ -82,10 +82,26 @@ public partial class ServiceSettingsOverlay : UserControl
             _openAiSettingsDebounce.Stop();
             Persist(s =>
             {
-                s.OpenAiBaseUrl = OpenAiBaseUrlBox.Text.Trim();
-                s.OpenAiApiKey = OpenAiApiKeyBox.Secret.Trim();
-                s.OpenAiModel = OpenAiModelField.Text.Trim();
-                s.OpenAiTemperature = ReadTemperature();
+                if (_provider is TranslationProvider.Baidu or TranslationProvider.Tencent or TranslationProvider.Youdao or TranslationProvider.GoogleCloud or TranslationProvider.AzureTranslator)
+                {
+                    var api = s.TranslationApis;
+                    switch (_provider)
+                    {
+                        case TranslationProvider.Baidu: api.BaiduAppId = TraditionalIdBox.Text.Trim(); api.BaiduSecretKey = TraditionalSecretBox.Secret.Trim(); break;
+                        case TranslationProvider.Tencent: api.TencentSecretId = TraditionalIdBox.Text.Trim(); api.TencentSecretKey = TraditionalSecretBox.Secret.Trim(); api.TencentRegion = TraditionalRegionBox.Text.Trim(); break;
+                        case TranslationProvider.Youdao: api.YoudaoAppKey = TraditionalIdBox.Text.Trim(); api.YoudaoAppSecret = TraditionalAppSecretBox.Secret.Trim(); break;
+                        case TranslationProvider.GoogleCloud: api.GoogleCloudApiKey = TraditionalApiKeyBox.Secret.Trim(); break;
+                        case TranslationProvider.AzureTranslator: api.AzureSubscriptionKey = TraditionalApiKeyBox.Secret.Trim(); api.AzureRegion = TraditionalRegionBox.Text.Trim(); break;
+                    }
+                }
+                else if (_provider == TranslationProvider.ChatGPT)
+                {
+                    s.ChatGptBaseUrl = OpenAiBaseUrlBox.Text.Trim(); s.ChatGptApiKey = OpenAiApiKeyBox.Secret.Trim(); s.ChatGptModel = OpenAiModelField.Text.Trim(); s.ChatGptTemperature = ReadTemperature();
+                }
+                else
+                {
+                    s.OpenAiBaseUrl = OpenAiBaseUrlBox.Text.Trim(); s.OpenAiApiKey = OpenAiApiKeyBox.Secret.Trim(); s.OpenAiModel = OpenAiModelField.Text.Trim(); s.OpenAiTemperature = ReadTemperature();
+                }
             });
         };
 
@@ -204,25 +220,42 @@ public partial class ServiceSettingsOverlay : UserControl
                 "S.Settings.ServiceDialogTitle", LanguageData.GetProviderDisplay(_provider));
 
             var deepL = _provider == TranslationProvider.DeepL;
+            var traditional = _provider is TranslationProvider.Baidu or TranslationProvider.Tencent
+                or TranslationProvider.Youdao or TranslationProvider.GoogleCloud or TranslationProvider.AzureTranslator;
             DeepLPanel.Visibility = deepL ? Visibility.Visible : Visibility.Collapsed;
-            OpenAiPanel.Visibility = deepL ? Visibility.Collapsed : Visibility.Visible;
+            TraditionalApiPanel.Visibility = traditional ? Visibility.Visible : Visibility.Collapsed;
+            OpenAiPanel.Visibility = deepL || traditional ? Visibility.Collapsed : Visibility.Visible;
 
-            // DeepL's key cannot be probed the way an OpenAI-compatible endpoint can, so the test
-            // button belongs to the OpenAI panel only.
-            OpenAiTestBtn.Visibility = deepL ? Visibility.Collapsed : Visibility.Visible;
-            OpenAiTestResult.Visibility = deepL ? Visibility.Collapsed : Visibility.Visible;
-
-            // The card is sized for the wider of the two panels, and DeepL is one field.
-            Card.Width = deepL ? 460 : 620;
+            OpenAiTestBtn.Visibility = deepL || traditional ? Visibility.Collapsed : Visibility.Visible;
+            OpenAiTestResult.Visibility = deepL || traditional ? Visibility.Collapsed : Visibility.Visible;
+            Card.Width = deepL ? 460 : traditional ? 520 : 620;
 
             ApiKeyBox.Secret = s.ApiKey;
+            var api = s.TranslationApis;
+            TraditionalIdBox.Text = _provider switch
+            {
+                TranslationProvider.Baidu => api.BaiduAppId,
+                TranslationProvider.Tencent => api.TencentSecretId,
+                TranslationProvider.Youdao => api.YoudaoAppKey,
+                _ => "",
+            };
+            TraditionalSecretBox.Secret = _provider switch
+            {
+                TranslationProvider.Baidu => api.BaiduSecretKey,
+                TranslationProvider.Tencent => api.TencentSecretKey,
+                _ => "",
+            };
+            TraditionalAppSecretBox.Secret = _provider == TranslationProvider.Youdao ? api.YoudaoAppSecret : "";
+            TraditionalRegionBox.Text = _provider == TranslationProvider.Tencent ? api.TencentRegion : _provider == TranslationProvider.AzureTranslator ? api.AzureRegion : "";
+            TraditionalApiKeyBox.Secret = _provider == TranslationProvider.GoogleCloud ? api.GoogleCloudApiKey : _provider == TranslationProvider.AzureTranslator ? api.AzureSubscriptionKey : "";
 
-            OpenAiBaseUrlBox.Text = s.OpenAiBaseUrl;
-            OpenAiApiKeyBox.Secret = s.OpenAiApiKey;
-            OpenAiModelField.Text = s.OpenAiModel;
-            TemperatureEnabledCheckBox.IsChecked = s.OpenAiTemperatureEnabled;
-            TemperatureBox.Text = FormatTemperature(s.OpenAiTemperature);
+            OpenAiBaseUrlBox.Text = _provider == TranslationProvider.ChatGPT ? s.ChatGptBaseUrl : s.OpenAiBaseUrl;
+            OpenAiApiKeyBox.Secret = _provider == TranslationProvider.ChatGPT ? s.ChatGptApiKey : s.OpenAiApiKey;
+            OpenAiModelField.Text = _provider == TranslationProvider.ChatGPT ? s.ChatGptModel : s.OpenAiModel;
+            TemperatureEnabledCheckBox.IsChecked = _provider == TranslationProvider.ChatGPT ? s.ChatGptTemperatureEnabled : s.OpenAiTemperatureEnabled;
+            TemperatureBox.Text = FormatTemperature(_provider == TranslationProvider.ChatGPT ? s.ChatGptTemperature : s.OpenAiTemperature);
             LoadPromptEditor(s);
+            UpdateTraditionalFieldChrome();
 
             UpdateOpenAiFieldChrome();
             UpdateTemperatureChrome();
@@ -262,10 +295,26 @@ public partial class ServiceSettingsOverlay : UserControl
             _openAiSettingsDebounce.Stop();
             Persist(s =>
             {
-                s.OpenAiBaseUrl = OpenAiBaseUrlBox.Text.Trim();
-                s.OpenAiApiKey = OpenAiApiKeyBox.Secret.Trim();
-                s.OpenAiModel = OpenAiModelField.Text.Trim();
-                s.OpenAiTemperature = ReadTemperature();
+                if (_provider is TranslationProvider.Baidu or TranslationProvider.Tencent or TranslationProvider.Youdao or TranslationProvider.GoogleCloud or TranslationProvider.AzureTranslator)
+                {
+                    var api = s.TranslationApis;
+                    switch (_provider)
+                    {
+                        case TranslationProvider.Baidu: api.BaiduAppId = TraditionalIdBox.Text.Trim(); api.BaiduSecretKey = TraditionalSecretBox.Secret.Trim(); break;
+                        case TranslationProvider.Tencent: api.TencentSecretId = TraditionalIdBox.Text.Trim(); api.TencentSecretKey = TraditionalSecretBox.Secret.Trim(); api.TencentRegion = TraditionalRegionBox.Text.Trim(); break;
+                        case TranslationProvider.Youdao: api.YoudaoAppKey = TraditionalIdBox.Text.Trim(); api.YoudaoAppSecret = TraditionalAppSecretBox.Secret.Trim(); break;
+                        case TranslationProvider.GoogleCloud: api.GoogleCloudApiKey = TraditionalApiKeyBox.Secret.Trim(); break;
+                        case TranslationProvider.AzureTranslator: api.AzureSubscriptionKey = TraditionalApiKeyBox.Secret.Trim(); api.AzureRegion = TraditionalRegionBox.Text.Trim(); break;
+                    }
+                }
+                else if (_provider == TranslationProvider.ChatGPT)
+                {
+                    s.ChatGptBaseUrl = OpenAiBaseUrlBox.Text.Trim(); s.ChatGptApiKey = OpenAiApiKeyBox.Secret.Trim(); s.ChatGptModel = OpenAiModelField.Text.Trim(); s.ChatGptTemperature = ReadTemperature();
+                }
+                else
+                {
+                    s.OpenAiBaseUrl = OpenAiBaseUrlBox.Text.Trim(); s.OpenAiApiKey = OpenAiApiKeyBox.Secret.Trim(); s.OpenAiModel = OpenAiModelField.Text.Trim(); s.OpenAiTemperature = ReadTemperature();
+                }
             });
         }
 
@@ -279,6 +328,32 @@ public partial class ServiceSettingsOverlay : UserControl
         if (_loading) return;
         _apiKeyDebounce.Stop();
         _apiKeyDebounce.Start();
+    }
+
+    // ── Official traditional API fields ──────────────────────────────────────
+    private void TraditionalSetting_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateTraditionalFieldChrome();
+        if (_loading) return;
+        _openAiSettingsDebounce.Stop();
+        _openAiSettingsDebounce.Start();
+    }
+
+    private void TraditionalSecret_Changed(object? sender, EventArgs e)
+    {
+        if (_loading) return;
+        _openAiSettingsDebounce.Stop();
+        _openAiSettingsDebounce.Start();
+    }
+
+    private void UpdateTraditionalFieldChrome()
+    {
+        var t = _provider;
+        TraditionalIdBox.Visibility = t is TranslationProvider.Baidu or TranslationProvider.Tencent or TranslationProvider.Youdao ? Visibility.Visible : Visibility.Collapsed;
+        TraditionalSecretBox.Visibility = t is TranslationProvider.Baidu or TranslationProvider.Tencent ? Visibility.Visible : Visibility.Collapsed;
+        TraditionalAppSecretBox.Visibility = t == TranslationProvider.Youdao ? Visibility.Visible : Visibility.Collapsed;
+        TraditionalRegionBox.Visibility = t is TranslationProvider.Tencent or TranslationProvider.AzureTranslator ? Visibility.Visible : Visibility.Collapsed;
+        TraditionalApiKeyBox.Visibility = t is TranslationProvider.GoogleCloud or TranslationProvider.AzureTranslator ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ── OpenAI fields ────────────────────────────────────────────────────────
@@ -445,7 +520,11 @@ public partial class ServiceSettingsOverlay : UserControl
     {
         UpdateTemperatureChrome();
         if (_loading) return;
-        Persist(s => s.OpenAiTemperatureEnabled = TemperatureEnabledCheckBox.IsChecked == true);
+        Persist(s =>
+        {
+            if (_provider == TranslationProvider.ChatGPT) s.ChatGptTemperatureEnabled = TemperatureEnabledCheckBox.IsChecked == true;
+            else s.OpenAiTemperatureEnabled = TemperatureEnabledCheckBox.IsChecked == true;
+        });
     }
 
     private void TemperatureBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -540,7 +619,9 @@ public partial class ServiceSettingsOverlay : UserControl
         if (_promptSegment == PromptAutoSegment) PromptAutoTab.IsChecked = true;
         else PromptExplicitTab.IsChecked = true;
 
-        PromptBox.Text = _promptSegment == PromptAutoSegment ? s.OpenAiPromptAuto : s.OpenAiPromptExplicit;
+        PromptBox.Text = _promptSegment == PromptAutoSegment
+            ? (_provider == TranslationProvider.ChatGPT ? s.ChatGptPromptAuto : s.OpenAiPromptAuto)
+            : (_provider == TranslationProvider.ChatGPT ? s.ChatGptPromptExplicit : s.OpenAiPromptExplicit);
         UpdatePromptChrome();
     }
 
@@ -555,7 +636,9 @@ public partial class ServiceSettingsOverlay : UserControl
         _promptSegment = PromptExplicitTab.IsChecked == true ? PromptExplicitSegment : PromptAutoSegment;
 
         var s = SettingsService.Instance.Current;
-        var text = _promptSegment == PromptAutoSegment ? s.OpenAiPromptAuto : s.OpenAiPromptExplicit;
+        var text = _promptSegment == PromptAutoSegment
+            ? (_provider == TranslationProvider.ChatGPT ? s.ChatGptPromptAuto : s.OpenAiPromptAuto)
+            : (_provider == TranslationProvider.ChatGPT ? s.ChatGptPromptExplicit : s.OpenAiPromptExplicit);
 
         // Assigning Text would raise TextChanged and start the debounce, which would then write
         // this prompt straight back over itself; _loading is what the rest of the panel uses to mean
@@ -665,8 +748,16 @@ public partial class ServiceSettingsOverlay : UserControl
 
         Persist(s =>
         {
-            if (segment == PromptAutoSegment) s.OpenAiPromptAuto = text;
-            else s.OpenAiPromptExplicit = text;
+            if (_provider == TranslationProvider.ChatGPT)
+            {
+                if (segment == PromptAutoSegment) s.ChatGptPromptAuto = text;
+                else s.ChatGptPromptExplicit = text;
+            }
+            else
+            {
+                if (segment == PromptAutoSegment) s.OpenAiPromptAuto = text;
+                else s.OpenAiPromptExplicit = text;
+            }
         });
 
         UpdatePromptChrome();

@@ -867,12 +867,15 @@
                                        VerticalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- ── 常见厂商卡片 ──
-                             内置 DeepL/OpenAI 兼容 + 预设厂商(DeepSeek、智谱、Kimi、硅基流动、
-                             OpenRouter、Grok、Ollama)直接铺成紧凑卡片,设置/使用/测试/删除全部
-                             图标化;卡片内容从 code-behind 生成,因为每张卡的状态与可用操作取
-                             决于读取时的设置。 -->
-                        <UniformGrid Columns="2" x:Name="PresetCardHost" Margin="0,12,0,0"/>
+                        <!-- ── 传统翻译 ── -->
+                        <TextBlock Text="{DynamicResource S.Provider.Group.Traditional}"
+                                   Style="{StaticResource FieldLabel}" Margin="0,12,0,6"/>
+                        <UniformGrid Columns="2" x:Name="TraditionalCardHost" Margin="0,0,0,4"/>
+
+                        <!-- ── AI 翻译 ── -->
+                        <TextBlock Text="{DynamicResource S.Provider.Group.AI}"
+                                   Style="{StaticResource FieldLabel}" Margin="0,8,0,6"/>
+                        <UniformGrid Columns="2" x:Name="PresetCardHost" Margin="0,0,0,0"/>
 
                         <!-- ── 自定义服务 ──
                              不匹配任何预设端点的服务在这里;添加入口常驻,走模板条自选。 -->

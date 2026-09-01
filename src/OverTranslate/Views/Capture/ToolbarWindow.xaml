@@ -103,7 +103,18 @@
                               Style="{StaticResource ToolbarComboBox}"
                               Width="142"
                               SelectedValuePath="Value"
-                              VerticalContentAlignment="Center"/>
+                              VerticalContentAlignment="Center">
+                        <ComboBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AppAccent}" Margin="6,8,6,3"/>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ComboBox.GroupStyle>
+                    </ComboBox>
 
                     <!-- Fallback badge: shown only when a backup engine actually served the batch -->
                     <Border x:Name="EngineBadge"

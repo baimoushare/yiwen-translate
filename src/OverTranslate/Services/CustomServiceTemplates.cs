@@ -22,7 +22,16 @@ namespace OverTranslate.Services;
 /// are also the card's identity: change one and the card stops claiming services added under the
 /// old one, which is the honest outcome of pointing at a different endpoint.
 /// </remarks>
+public enum CustomServicePlan
+{
+    Standard,
+    Coding,
+    Blank,
+}
+
 public record CustomServiceTemplate(
+    string Vendor,
+    CustomServicePlan Plan,
     string Name,
     string BaseUrl,
     string Model,
@@ -32,20 +41,39 @@ public record CustomServiceTemplate(
 {
     public static readonly List<CustomServiceTemplate> Presets =
     [
-        new("Ollama（本地）", "http://localhost:11434/v1", "translategemma:4b", "O", "#F5F5F5", DarkLetter: true),
-        new("DeepSeek",       "https://api.deepseek.com/v1", "deepseek-chat", "D", "#4D6BFE"),
-        new("智谱 GLM",       "https://open.bigmodel.cn/api/paas/v4", "glm-4-flash", "智", "#3859FF"),
-        new("Kimi (Moonshot)","https://api.moonshot.cn/v1", "moonshot-v1-8k", "K", "#1F232B"),
-        new("硅基流动",       "https://api.siliconflow.cn/v1", "Qwen/Qwen2.5-7B-Instruct", "S", "#7C3AED"),
-        new("OpenRouter",     "https://openrouter.ai/api/v1", "google/gemini-2.0-flash-001", "O", "#6467F2"),
-        new("Grok (xAI)",     "https://api.x.ai/v1", "grok-2-latest", "G", "#101418"),
-        // Coding Plan 端点和模型可能随套餐调整，模板只提供可编辑的默认值。
-        new("智谱 GLM Coding Plan", "https://open.bigmodel.cn/api/paas/v4", "glm-4.5-air", "智", "#3859FF"),
-        new("Kimi Coding Plan", "https://api.moonshot.cn/v1", "kimi-k2-0711-preview", "K", "#1F232B"),
-        new("硅基流动 Coding Plan", "https://api.siliconflow.cn/v1", "Qwen/Qwen3-30B-A3B", "S", "#7C3AED"),
-        new("千问 Coding Plan", "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-plus", "Q", "#1677FF"),
-        new("空白",           "", ""),
+        new("ollama", CustomServicePlan.Standard, "Ollama（本地）", "http://localhost:11434/v1", "translategemma:4b", "O", "#F5F5F5", DarkLetter: true),
+        new("deepseek", CustomServicePlan.Standard, "DeepSeek", "https://api.deepseek.com/v1", "deepseek-chat", "D", "#4D6BFE"),
+        new("glm", CustomServicePlan.Standard, "智谱 GLM", "https://open.bigmodel.cn/api/paas/v4", "glm-4-flash", "智", "#3859FF"),
+        new("glm", CustomServicePlan.Coding, "智谱 GLM Coding Plan", "https://open.bigmodel.cn/api/coding/paas/v4", "glm-4.5-air", "智", "#3859FF"),
+        new("kimi", CustomServicePlan.Standard, "Kimi (Moonshot)", "https://api.moonshot.cn/v1", "moonshot-v1-8k", "K", "#1F232B"),
+        new("kimi", CustomServicePlan.Coding, "Kimi Coding Plan", "https://api.kimi.com/coding/v1", "kimi-k2-0711-preview", "K", "#1F232B"),
+        new("siliconflow", CustomServicePlan.Standard, "硅基流动", "https://api.siliconflow.cn/v1", "Qwen/Qwen2.5-7B-Instruct", "S", "#7C3AED"),
+        new("siliconflow", CustomServicePlan.Coding, "硅基流动 Coding Plan", "https://api.siliconflow.cn/v1", "Qwen/Qwen3-30B-A3B", "S", "#7C3AED"),
+        new("qwen", CustomServicePlan.Standard, "千问", "https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen-plus", "Q", "#1677FF"),
+        new("qwen", CustomServicePlan.Coding, "千问 Coding Plan", "https://coding.dashscope.aliyuncs.com/v1", "qwen-plus", "Q", "#1677FF"),
+        new("openrouter", CustomServicePlan.Standard, "OpenRouter", "https://openrouter.ai/api/v1", "google/gemini-2.0-flash-001", "O", "#6467F2"),
+        new("grok", CustomServicePlan.Standard, "Grok (xAI)", "https://api.x.ai/v1", "grok-2-latest", "G", "#101418"),
+        new("blank", CustomServicePlan.Blank, "空白", "", ""),
     ];
+
+    /// <summary>One card per vendor; Standard is the card's preferred default plan.</summary>
+    public static IEnumerable<CustomServiceTemplate> VendorCards =>
+        Presets.Where(template => template.Plan == CustomServicePlan.Standard);
+
+    public static IEnumerable<CustomServiceTemplate> OptionsFor(CustomServiceTemplate? vendor) =>
+        vendor is null
+            ? Presets.Where(template => template.Plan == CustomServicePlan.Blank)
+            : Presets.Where(template => template.Vendor == vendor.Vendor);
+
+    /// <summary>
+    /// Whether a service's endpoint belongs to this vendor — any of its plans counts, so a Coding
+    /// Plan service (whose endpoint differs from the standard API's) is still claimed by its card.
+    /// </summary>
+    public static bool BelongsToVendor(string baseUrl, string vendor) =>
+        Presets.Any(template =>
+            template.Vendor == vendor &&
+            template.BaseUrl.Length > 0 &&
+            SameEndpoint(baseUrl, template.BaseUrl));
 
     /// <summary>Whether two base URLs point at the same endpoint, slash conventions aside.</summary>
     public static bool SameEndpoint(string a, string b) =>

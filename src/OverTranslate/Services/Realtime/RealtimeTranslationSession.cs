@@ -781,8 +781,8 @@ public sealed class RealtimeTranslationSession
 
         if (missing.Count > 0)
         {
-            var apiKey = SettingsService.Instance.Current.ApiKey;
-            if (_translation.ProviderRequiresApiKey(_provider) && string.IsNullOrWhiteSpace(apiKey))
+            var apiKey = _translation.ApiKeyFor(_provider);
+            if (_translation.ProviderRequiresApiKey(_provider) && !_translation.HasConfiguredApiKey(_provider))
                 throw new InvalidOperationException(LocalizationService.Get("S.Realtime.MissingApiKey"));
 
             var (results, _) = await _translation.TranslateAsync(

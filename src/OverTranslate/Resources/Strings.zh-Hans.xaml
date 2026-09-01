@@ -138,6 +138,7 @@
     <sys:String x:Key="S.QuickLookup.Unpin">取消钉住</sys:String>
     <sys:String x:Key="S.QuickLookup.Copy">复制</sys:String>
     <sys:String x:Key="S.QuickLookup.Copied">已复制</sys:String>
+    <sys:String x:Key="S.QuickLookup.CopyFailed">复制失败</sys:String>
     <sys:String x:Key="S.QuickLookup.SpeakSource">朗读原文</sys:String>
     <sys:String x:Key="S.QuickLookup.SpeakSourceTip">朗读原文</sys:String>
     <!-- 这里的"自动"不像文字翻译那样直接停用：翻译回来后引擎会告诉我们原文是什么语言，
@@ -404,6 +405,7 @@
     <sys:String x:Key="S.Settings.ServiceDefault">使用默认</sys:String>
     <sys:String x:Key="S.Settings.ServiceDialogTitle">{0}设置</sys:String>
     <sys:String x:Key="S.Settings.ApiBaseUrl">API 地址</sys:String>
+    <sys:String x:Key="S.Settings.TraditionalApiHint">填写该翻译平台要求的认证信息。</sys:String>
     <sys:String x:Key="S.Settings.ModelName">模型名称</sys:String>
     <sys:String x:Key="S.Settings.OllamaGuide">本地模型 (Ollama) 安装教程</sys:String>
     <sys:String x:Key="S.Settings.PromptAuto">自动翻译 Prompt</sys:String>

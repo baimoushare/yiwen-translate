@@ -332,7 +332,7 @@ public partial class ToolbarWindow : Window
     {
         SrcLangBox.ItemsSource  = LanguageData.OcrSourceLanguages;
         TgtLangBox.ItemsSource  = LanguageData.TargetLanguages;
-        ProviderBox.ItemsSource = ServiceSelection.Options();
+        ProviderBox.ItemsSource = ServiceSelection.GroupedOptions();
 
         SrcLangBox.SelectedValue  = LanguageData.GetValidOcrSourceCode(sourceLang);
         TgtLangBox.SelectedValue  = LanguageData.GetValidTargetCode(targetLang);

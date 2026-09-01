@@ -179,9 +179,9 @@ public partial class RealtimePage : UserControl
         if (TgtLangBox.SelectedValue == null)
             TgtLangBox.SelectedValue = DefaultTargetLanguage;
 
-        ProviderBox.SelectedValue = settings.Realtime.Provider;
+        ProviderBox.SelectedValue = settings.Realtime.Provider.ToString();
         if (ProviderBox.SelectedValue == null)
-            ProviderBox.SelectedValue = DefaultProvider;
+            ProviderBox.SelectedValue = DefaultProvider.ToString();
         if (ProviderBox.SelectedValue == null) ProviderBox.SelectedIndex = 0;
         RenderProviderHint();
 
@@ -265,7 +265,7 @@ public partial class RealtimePage : UserControl
                 .Where(language => !LanguageData.IsAutomaticSource(language.Code))
                 .ToList());
         LocalizationService.BindLocalizedItems(TgtLangBox,  LanguageData.TargetLanguages);
-        LocalizationService.BindLocalizedItems(ProviderBox, LanguageData.Providers);
+        LocalizationService.BindLocalizedItems(ProviderBox, ServiceSelection.GroupedBuiltInOptions());
 
         SrcLangBox.SelectedValue  = source;
         TgtLangBox.SelectedValue  = target;
@@ -315,7 +315,7 @@ public partial class RealtimePage : UserControl
 
     private void ProviderBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ProviderBox.SelectedValue is TranslationProvider provider)
+        if (ProviderBox.SelectedValue is string value && Enum.TryParse<TranslationProvider>(value, out var provider))
             SaveTranslationPreference(settings => settings.Realtime.Provider = provider);
         RenderProviderHint();
     }
@@ -354,9 +354,11 @@ public partial class RealtimePage : UserControl
     /// </summary>
     private void RenderProviderHint()
     {
-        var item = ProviderBox.SelectedItem as ProviderItem;
-        var missingKey = item?.RequiresApiKey == true &&
-                         string.IsNullOrWhiteSpace(SettingsService.Instance.Current.ApiKey);
+        var item = ProviderBox.SelectedItem as ServiceOption;
+        var provider = item is not null && Enum.TryParse<TranslationProvider>(item.Value, out var parsed)
+            ? parsed : DefaultProvider;
+        var missingKey = item?.RequiresSetup == true &&
+                         !AppServices.Translation.HasConfiguredApiKey(provider);
 
         ProviderHint.Text = missingKey
             ? LocalizationService.Get("S.Realtime.NoApiKey")

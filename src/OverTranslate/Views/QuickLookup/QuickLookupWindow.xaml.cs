@@ -129,6 +129,9 @@ public partial class QuickLookupWindow : Window
     /// <summary>True once the closing animation has started, so nothing restarts it.</summary>
     private bool _closing;
 
+    /// <summary>True while the result is being written to the system clipboard.</summary>
+    private bool _copyInProgress;
+
     /// <summary>Monotonic id, so a slow translation cannot overwrite the result of a newer one.</summary>
     private int _seq;
 
@@ -294,7 +297,7 @@ public partial class QuickLookupWindow : Window
         _debounce.Tick += (_, _) => { _debounce.Stop(); _ = TranslateNowAsync(); };
 
         _copiedHold = new DispatcherTimer { Interval = CopiedHold };
-        _copiedHold.Tick += (_, _) => { _copiedHold.Stop(); RenderCopyLabel(copied: false); };
+        _copiedHold.Tick += (_, _) => { _copiedHold.Stop(); RenderCopyLabel("S.QuickLookup.Copy"); };
 
         _foregroundWatch = new DispatcherTimer { Interval = ForegroundWatchInterval };
         _foregroundWatch.Tick += (_, _) => CheckForeground();
@@ -304,7 +307,7 @@ public partial class QuickLookupWindow : Window
         _suppressAuto = true;
         LocalizationService.BindLocalizedItems(SrcLangBox, LanguageData.SourceLanguages);
         LocalizationService.BindLocalizedItems(TgtLangBox, LanguageData.TargetLanguages);
-        LocalizationService.BindLocalizedItems(ProviderBox, ServiceSelection.Options());
+        LocalizationService.BindLocalizedItems(ProviderBox, ServiceSelection.GroupedOptions());
         LoadSharedPreferences();
         _suppressAuto = false;
 
@@ -352,7 +355,7 @@ public partial class QuickLookupWindow : Window
         };
 
         RenderChrome();
-        RenderCopyLabel(copied: false);
+        RenderCopyLabel("S.QuickLookup.Copy");
         RenderSettingsButton();
         RenderSettingsHint();
     }
@@ -905,7 +908,7 @@ public partial class QuickLookupWindow : Window
         var srcLang = LanguageData.GetValidSourceCode(SrcLangBox.SelectedValue as string);
         var tgtLang = LanguageData.GetValidTargetCode(TgtLangBox.SelectedValue as string);
 
-        if (AppServices.Translation.RequiresApiKey && string.IsNullOrWhiteSpace(settings.ApiKey))
+        if (!AppServices.Translation.HasConfiguredCurrentApiKey)
         {
             ShowStatus(LocalizationService.Get("S.Translation.MissingApiKey"), isError: true);
             return;
@@ -1130,26 +1133,41 @@ public partial class QuickLookupWindow : Window
     /// </remarks>
     private async void CopyBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (TranslatedText.Text.Length == 0) return;
+        if (_copyInProgress) return;
 
+        var text = TranslatedText.Text;
+        if (text.Length == 0) return;
+
+        _copyInProgress = true;
         try
         {
-            await Services.ClipboardRetry.SetTextAsync(TranslatedText.Text);
+            await Services.ClipboardRetry.SetTextAsync(text);
         }
         catch (Exception ex)
         {
             Log.Warn(ex, "Could not copy the translation");
+            if (!_closing && IsLoaded)
+            {
+                RenderCopyLabel("S.QuickLookup.CopyFailed");
+                _copiedHold.Stop();
+                _copiedHold.Start();
+            }
             return;
         }
+        finally
+        {
+            _copyInProgress = false;
+        }
 
-        RenderCopyLabel(copied: true);
+        if (_closing || !IsLoaded) return;
+
+        RenderCopyLabel("S.QuickLookup.Copied");
         _copiedHold.Stop();
         _copiedHold.Start();
     }
 
-    private void RenderCopyLabel(bool copied) =>
-        CopyLabel.Text = LocalizationService.Get(
-            copied ? "S.QuickLookup.Copied" : "S.QuickLookup.Copy");
+    private void RenderCopyLabel(string resourceKey) =>
+        CopyLabel.Text = LocalizationService.Get(resourceKey);
 
     // ══════════════════════════ Settings panel ══════════════════════════
 
@@ -1338,7 +1356,7 @@ public partial class QuickLookupWindow : Window
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
         RenderChrome();
-        RenderCopyLabel(copied: false);
+        RenderCopyLabel("S.QuickLookup.Copy");
         RenderSettingsButton();
         RenderSettingsHint();
         RenderSourceTtsAvailability();

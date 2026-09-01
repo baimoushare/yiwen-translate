@@ -128,12 +128,65 @@ public class TranslationService
         _                                  => _google2,
     };
 
-    public bool RequiresApiKey => ActiveCustom is not null
-        ? false // the OpenAI-compatible contract works keyless against local servers
-        : Resilient(Saved).RequiresApiKey;
+    public bool RequiresApiKey => Resilient(Saved).RequiresApiKey;
+
+    /// <summary>Whether the currently selected service has all credentials it needs.</summary>
+    public bool HasConfiguredCurrentApiKey
+    {
+        get
+        {
+            var s = SettingsService.Instance.Current;
+            if (ActiveCustom is not null) return true;
+            return Saved switch
+            {
+                TranslationProvider.DeepL => !string.IsNullOrWhiteSpace(s.ApiKey),
+                TranslationProvider.Baidu => !string.IsNullOrWhiteSpace(s.TranslationApis.BaiduAppId) && !string.IsNullOrWhiteSpace(s.TranslationApis.BaiduSecretKey),
+                TranslationProvider.Tencent => !string.IsNullOrWhiteSpace(s.TranslationApis.TencentSecretId) && !string.IsNullOrWhiteSpace(s.TranslationApis.TencentSecretKey),
+                TranslationProvider.Youdao => !string.IsNullOrWhiteSpace(s.TranslationApis.YoudaoAppKey) && !string.IsNullOrWhiteSpace(s.TranslationApis.YoudaoAppSecret),
+                TranslationProvider.GoogleCloud => !string.IsNullOrWhiteSpace(s.TranslationApis.GoogleCloudApiKey),
+                TranslationProvider.AzureTranslator => !string.IsNullOrWhiteSpace(s.TranslationApis.AzureSubscriptionKey),
+                TranslationProvider.ChatGPT => !string.IsNullOrWhiteSpace(s.ChatGptApiKey),
+                _ => true,
+            };
+        }
+    }
 
     /// <summary>Whether a specific engine needs an API key, for a caller that chose its own.</summary>
     public bool ProviderRequiresApiKey(TranslationProvider provider) => Resilient(provider).RequiresApiKey;
+
+    /// <summary>Checks the credential fields belonging to a specific built-in provider.</summary>
+    public string ApiKeyFor(TranslationProvider provider)
+    {
+        var s = SettingsService.Instance.Current;
+        return provider switch
+        {
+            TranslationProvider.DeepL => s.ApiKey,
+            TranslationProvider.Baidu => s.TranslationApis.BaiduSecretKey,
+            TranslationProvider.Tencent => s.TranslationApis.TencentSecretKey,
+            TranslationProvider.Youdao => s.TranslationApis.YoudaoAppSecret,
+            TranslationProvider.GoogleCloud => s.TranslationApis.GoogleCloudApiKey,
+            TranslationProvider.AzureTranslator => s.TranslationApis.AzureSubscriptionKey,
+            TranslationProvider.ChatGPT => s.ChatGptApiKey,
+            TranslationProvider.OpenAI => s.OpenAiApiKey,
+            _ => "",
+        };
+    }
+
+    public bool HasConfiguredApiKey(TranslationProvider provider)
+    {
+        var s = SettingsService.Instance.Current;
+        return provider switch
+        {
+            TranslationProvider.DeepL => !string.IsNullOrWhiteSpace(s.ApiKey),
+            TranslationProvider.Baidu => !string.IsNullOrWhiteSpace(s.TranslationApis.BaiduAppId) && !string.IsNullOrWhiteSpace(s.TranslationApis.BaiduSecretKey),
+            TranslationProvider.Tencent => !string.IsNullOrWhiteSpace(s.TranslationApis.TencentSecretId) && !string.IsNullOrWhiteSpace(s.TranslationApis.TencentSecretKey),
+            TranslationProvider.Youdao => !string.IsNullOrWhiteSpace(s.TranslationApis.YoudaoAppKey) && !string.IsNullOrWhiteSpace(s.TranslationApis.YoudaoAppSecret),
+            TranslationProvider.GoogleCloud => !string.IsNullOrWhiteSpace(s.TranslationApis.GoogleCloudApiKey),
+            TranslationProvider.AzureTranslator => !string.IsNullOrWhiteSpace(s.TranslationApis.AzureSubscriptionKey),
+            TranslationProvider.ChatGPT => !string.IsNullOrWhiteSpace(s.ChatGptApiKey),
+            _ => true,
+        };
+    }
 
     /// <summary>
     /// Which engine(s) actually served the most recent translation. Null for providers that have
