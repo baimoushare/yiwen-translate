@@ -50,9 +50,13 @@ tag **不加 `v` 前綴**（沿用本倉慣例）。觸發條件是 `[0-9]*` 或
 
 ### 5. 轉成正式版
 
-到那個 release 按 **Edit release**，取消勾選 *Set as a pre-release*。
+到那个 release 按 **Edit release**，取消勾选 *Set as a pre-release*，并勾选
+*Set as the latest release*。
 
-**使用者拿到的就是你剛剛驗過的同一批檔案**，不是重打的另一包。
+稳定客户端从 `releases/latest/download/releases.win.json` 读取更新，不消耗 GitHub 匿名 API
+配额；因此 **Latest Release 必须指向刚发布的正式版**，否则客户端仍会读到旧版本清单。
+
+**使用者拿到的就是你刚刚验过的同一批档案**，不是重打的另一包。
 
 ---
 

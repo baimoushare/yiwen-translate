@@ -14,7 +14,7 @@
                                         ↓
                             設環境變數，在自己機器上驗更新
                                         ↓
-                    到 GitHub 取消勾選 pre-release ← 唯一會推給使用者的動作，必須由人做
+                    到 GitHub 取消勾选 pre-release，并设为 Latest ← 正式推送给使用者
 ```
 
 ## 相關檔案

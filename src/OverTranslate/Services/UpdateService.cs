@@ -16,6 +16,8 @@ public static class UpdateService
     // GitHub Releases is the sole production update source. Keeping the release artifacts and the
     // client feed in one place prevents the download page and automatic updates from drifting apart.
     private const string GitHubRepoUrl = "https://github.com/baimoushare/yiwen-translate";
+    private const string StableReleaseUrl =
+        "https://github.com/baimoushare/yiwen-translate/releases/latest/download/";
     private const string StableChannel = "win";
     private const string BetaChannel = "beta";
 
@@ -178,9 +180,23 @@ public static class UpdateService
         var token = string.IsNullOrWhiteSpace(repoUrl)
             ? null
             : Environment.GetEnvironmentVariable("OVERTRANSLATE_UPDATE_TOKEN");
-        if (string.IsNullOrWhiteSpace(repoUrl))
-            repoUrl = GitHubRepoUrl;
 
-        return new UpdateManager(new GithubSource(repoUrl, token, prerelease: seesPrerelease), options);
+        var source = CreateSource(repoUrl, token, seesPrerelease);
+        return new UpdateManager(source, options);
+    }
+
+    internal static IUpdateSource CreateSource(
+        string? repoUrl, string? token, bool seesPrerelease)
+    {
+        var usesCustomRepo = !string.IsNullOrWhiteSpace(repoUrl);
+
+        // The public stable path reads GitHub's latest-release assets directly. Unlike GithubSource,
+        // it does not spend the shared unauthenticated REST quota (60 requests/hour per public IP),
+        // which can be exhausted immediately on office, campus, VPN, or carrier-grade NAT networks.
+        if (!usesCustomRepo && !seesPrerelease)
+            return new SimpleWebSource(StableReleaseUrl);
+
+        repoUrl ??= GitHubRepoUrl;
+        return new GithubSource(repoUrl, token, prerelease: seesPrerelease);
     }
 }
