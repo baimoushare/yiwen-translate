@@ -37,11 +37,11 @@ internal static class RealtimeFrameDump
 
     private static readonly string LogDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "OverTranslate", "logs");
+        "Yiwen", "logs");
 
     private static readonly string Directory = Path.Combine(LogDirectory, "frames");
 
-    /// <summary>Create <c>%AppData%\OverTranslate\logs\dumpframes</c> and restart to switch on.</summary>
+    /// <summary>Create <c>%AppData%\Yiwen\logs\dumpframes</c> and restart to switch on.</summary>
     public static readonly bool IsEnabled = File.Exists(Path.Combine(LogDirectory, "dumpframes"));
 
     /// <summary>
