@@ -4,6 +4,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Controls.Primitives;
+using NLog;
 using OverTranslate.Services;
 using WPoint = System.Windows.Point;
 using Key = System.Windows.Input.Key;
@@ -15,6 +16,8 @@ namespace OverTranslate.Views.Capture;
 
 public partial class ScreenCaptureWindow : Window
 {
+    private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
     private const int WM_NCHITTEST  = 0x0084;
     private const int HTTRANSPARENT = -1;
     private static readonly Uri CrosshairCursorUri = new("pack://application:,,,/icons/capture_crosshair.cur", UriKind.Absolute);
@@ -154,6 +157,15 @@ public partial class ScreenCaptureWindow : Window
         // OnContentRendered so their reveal animation would not play against a hidden window; with
         // no animation left, deferring only adds work between the first frame and the reveal.)
         HintHost.ItemsSource = BuildHintSpots();
+
+        // The pin above asked for _physBounds; whether the window actually landed there is worth
+        // one line at startup, because everything downstream now corrects through the live rect
+        // but a window outside the desktop is a user-visible breakage of its own.
+        var placed = ScreenGeometry.PhysicalBounds(this);
+        if (!placed.IsEmpty && placed != _physBounds)
+            Log.Warn(
+                "Capture window pinned to {Pinned} but actually at {Actual}",
+                _physBounds, placed);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -264,17 +276,14 @@ public partial class ScreenCaptureWindow : Window
     {
         if (!_hasSelection) return null;
 
-        int bmpX = Math.Clamp((int)Math.Floor(Selection.X - _physBounds.Left), 0, _screenshot.Width - 1);
-        int bmpY = Math.Clamp((int)Math.Floor(Selection.Y - _physBounds.Top),  0, _screenshot.Height - 1);
-        int right = (int)Math.Ceiling(Selection.Right - _physBounds.Left);
-        int bottom = (int)Math.Ceiling(Selection.Bottom - _physBounds.Top);
-        int bmpW = Math.Min(Math.Max(1, right - bmpX),  _screenshot.Width  - bmpX);
-        int bmpH = Math.Min(Math.Max(1, bottom - bmpY), _screenshot.Height - bmpY);
-        if (bmpW <= 0 || bmpH <= 0) return null;
+        // Same window-anchored mapping as TryCreateCroppedBitmap: the copy-screenshot image must
+        // show the same pixels the translation read, or the two disagree about what was framed.
+        var windowRect = LiveWindowRect();
+        if (CaptureCropMath.Crop(Selection, windowRect, _screenshot.Width, _screenshot.Height) is not
+            { } region)
+            return null;
 
-        using var crop = _screenshot.Clone(
-            new System.Drawing.Rectangle(bmpX, bmpY, bmpW, bmpH),
-            _screenshot.PixelFormat);
+        using var crop = _screenshot.Clone(region, _screenshot.PixelFormat);
         return BitmapToDisplaySource(crop);
     }
 
@@ -363,44 +372,84 @@ public partial class ScreenCaptureWindow : Window
 
     private void UpdateSelectionMetadata()
     {
-        double absPhysX = _physBounds.Left + _selectionWpfRect.X * _dpiX;
-        double absPhysY = _physBounds.Top  + _selectionWpfRect.Y * _dpiY;
-        double absPhysRight = _physBounds.Left + _selectionWpfRect.Right * _dpiX;
-        double absPhysBottom = _physBounds.Top + _selectionWpfRect.Bottom * _dpiY;
-        int bmpX = (int)Math.Floor(absPhysX);
-        int bmpY = (int)Math.Floor(absPhysY);
-        int bmpRight = (int)Math.Ceiling(absPhysRight);
-        int bmpBottom = (int)Math.Ceiling(absPhysBottom);
-        Selection = new Rect(
-            _physBounds.Left + bmpX,
-            _physBounds.Top + bmpY,
-            Math.Max(1, bmpRight - bmpX),
-            Math.Max(1, bmpBottom - bmpY));
+        // Live values, not the ones cached at OnSourceInitialized. On a mixed-DPI desktop that was
+        // reconfigured while the process lived, those caches were measured disagreeing with the
+        // window's real position by thousands of pixels (2026-09-01: Selection.X = -4634 against
+        // a desktop whose left edge is -2560, while the frame sat exactly where the user drew it).
+        // The mouse events that filled _selectionWpfRect are anchored to the window's real client
+        // origin by the OS, so converting with the real rectangle and the CURRENT scale recovers
+        // the true screen position in every state — stale bookkeeping included.
+        var screen = CaptureCropMath.ToScreen(_selectionWpfRect, LiveWindowRect(), LiveScaleX(), LiveScaleY());
+        int x = (int)Math.Floor(screen.X);
+        int y = (int)Math.Floor(screen.Y);
+        int right = (int)Math.Ceiling(screen.Right);
+        int bottom = (int)Math.Ceiling(screen.Bottom);
+        Selection = new Rect(x, y, Math.Max(1, right - x), Math.Max(1, bottom - y));
+    }
+
+    // Where the window really is, in pixels. GetWindowRect reads the HWND the moment it is asked,
+    // which is the whole point: this cannot be stale the way Window.Left or a cached rect can.
+    // Falls back to the pinned rectangle only before the handle exists, where nothing can select.
+    private System.Drawing.Rectangle LiveWindowRect()
+    {
+        var rect = ScreenGeometry.PhysicalBounds(this);
+        return rect.IsEmpty ? _physBounds : rect;
+    }
+
+    // The render scale read NOW, in the same space the mouse events arrive in — see
+    // UpdateSelectionMetadata for why the setup-time _dpiX must not be trusted to still match.
+    private double LiveScaleX()
+    {
+        var source = PresentationSource.FromVisual(this);
+        return source?.CompositionTarget?.TransformToDevice.M11 ?? _dpiX;
+    }
+
+    /// <inheritdoc cref="LiveScaleX"/>
+    private double LiveScaleY()
+    {
+        var source = PresentationSource.FromVisual(this);
+        return source?.CompositionTarget?.TransformToDevice.M22 ?? _dpiY;
     }
 
     private bool TryCreateCroppedBitmap()
     {
         UpdateSelectionMetadata();
 
-        double absPhysX = Selection.X;
-        double absPhysY = Selection.Y;
-        int bmpW = Math.Max(1, (int)Selection.Width);
-        int bmpH = Math.Max(1, (int)Selection.Height);
+        // The crop follows what the frozen image actually showed inside the drawn frame. The
+        // image is Stretch=Fill across the whole client area, so bitmap pixels are a fixed
+        // linear map of the window's pixel rectangle — a mapping that holds no matter which DPI
+        // state WPF is in, and the only anchor the crop needs.
+        var windowRect = LiveWindowRect();
+        if (windowRect != _physBounds)
+            Log.Warn(
+                "Capture window is not on its pinned rect: window={Window}, pinned={Pinned}, selection={Selection}",
+                windowRect, _physBounds, Selection);
 
-        int bmpX = Math.Clamp((int)(absPhysX - _physBounds.Left), 0, _screenshot.Width - 1);
-        int bmpY = Math.Clamp((int)(absPhysY - _physBounds.Top),  0, _screenshot.Height - 1);
-        bmpW = Math.Min(bmpW, _screenshot.Width  - bmpX);
-        bmpH = Math.Min(bmpH, _screenshot.Height - bmpY);
-        if (bmpW <= 0 || bmpH <= 0)
+        if (CaptureCropMath.Crop(Selection, windowRect, _screenshot.Width, _screenshot.Height) is not
+            { } region)
             return false;
 
         CroppedBitmap?.Dispose();
-        CroppedBitmap = _screenshot.Clone(
-            new System.Drawing.Rectangle(bmpX, bmpY, bmpW, bmpH),
-            _screenshot.PixelFormat);
-        Selection = new Rect(absPhysX, absPhysY, bmpW, bmpH);
+        CroppedBitmap = _screenshot.Clone(region, _screenshot.PixelFormat);
+        // Back on screen as the region actually cropped, so the overlay paints over the pixels
+        // that were really read — identical to Selection wherever the geometry is healthy.
+        Selection = new Rect(
+            windowRect.Left + region.X,
+            windowRect.Top + region.Y,
+            region.Width,
+            region.Height);
         return true;
     }
+
+    /// <summary>
+    /// Every coordinate space the selection passed through, for the log an empty OCR result
+    /// writes — the numbers that separate "framed the wrong pixels" from "the detector found
+    /// nothing", which no amount of re-recognising can.
+    /// </summary>
+    public string SelectionDiagnostics() =>
+        $"pinned={_physBounds} window={LiveWindowRect()} " +
+        $"scale={LiveScaleX():0.###}x{LiveScaleY():0.###} initScale={_dpiX:0.###}x{_dpiY:0.###} " +
+        $"wpf={_selectionWpfRect} selection={Selection} bitmap={_screenshot.Width}x{_screenshot.Height}";
 
     private void UpdateSelectionVisuals()
     {

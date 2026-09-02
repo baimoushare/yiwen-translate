@@ -796,6 +796,13 @@ public partial class MainWindow : Window
             _lastOcrBlocks = recognizedBlocks;
             if (_lastOcrBlocks.Count == 0)
             {
+                // Geometry before anything else: an empty result on a frame that visibly held text
+                // is the signature of a selection→crop mapping gone wrong (2026-09-01), and the
+                // numbers that decide it live on the capture window right now. Counts only — the
+                // crop itself goes to CaptureFrameDump, gated, never into the log.
+                Log.Info("Empty OCR result: {Diagnostics}", requestCaptureWindow.SelectionDiagnostics());
+                CaptureFrameDump.SaveEmptyResult(workBitmap);
+
                 requestToolbar?.SetTranslationState(false);
                 ShowBalloon(
                     LocalizationService.Get("S.Main.NoTextTitle"),
