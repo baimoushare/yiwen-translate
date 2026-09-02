@@ -499,7 +499,7 @@
                                           Width="180" Height="30"
                                           SelectedValuePath="Value">
                                     <ComboBox.GroupStyle>
-                                        <GroupStyle>
+                                        <GroupStyle ContainerStyle="{StaticResource ComboBoxGroupItemStyle}">
                                             <GroupStyle.HeaderTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold"

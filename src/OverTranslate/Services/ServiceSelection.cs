@@ -37,16 +37,17 @@ public static class ServiceSelection
 {
     public const string CustomPrefix = "custom:";
 
-    /// <summary>The built-in providers followed by the user's services, in picker order.</summary>
+    /// <summary>The built-in providers followed by configured user services, in picker order.</summary>
     public static List<ServiceOption> Options()
     {
         var options = LanguageData.Providers
+            .Where(p => IsAvailable(p.Provider))
             .Select(p => new ServiceOption(
                 p.Provider.ToString(), p.Display, p.RequiresApiKey, IsCustom: false,
                 Hint: p.Hint, GroupKey: p.GroupKey))
             .ToList();
 
-        foreach (var service in SettingsService.Instance.Current.CustomServices)
+        foreach (var service in SettingsService.Instance.Current.CustomServices.Where(IsAvailable))
         {
             var name = service.Name.Trim();
             if (name.Length == 0) name = LocalizationService.Get("S.Services.CustomUntitled");
@@ -59,10 +60,69 @@ public static class ServiceSelection
         return options;
     }
 
-    /// <summary>Returns all options as a grouped WPF view for ComboBox menus.</summary>
+    /// <summary>
+    /// Returns the current selection and repairs a preference that points to a service which is no
+    /// longer configured. This keeps the value shown by the picker and the provider used for the
+    /// subsequent translation on the same service.
+    /// </summary>
+    public static string CurrentValue()
+    {
+        var s = SettingsService.Instance.Current;
+        var custom = s.CustomServices.FirstOrDefault(c => c.Id == s.ActiveCustomServiceId);
+        if (s.Provider == TranslationProvider.OpenAI && custom is not null)
+        {
+            if (IsAvailable(custom)) return CustomPrefix + custom.Id;
+
+            // A custom service uses the built-in OpenAI slot underneath it. If its configuration is
+            // incomplete, clear only the custom half and retain that usable local slot.
+            s.ActiveCustomServiceId = "";
+            return s.Provider.ToString();
+        }
+
+        if (IsAvailable(s.Provider)) return s.Provider.ToString();
+
+        // A credentialed provider can become unavailable after its settings are cleared. Fall back
+        // to the application's established keyless default rather than leaving the picker with no
+        // matching item or tying the fallback to provider-list ordering.
+        s.ActiveCustomServiceId = "";
+        s.Provider = TranslationProvider.Microsoft;
+        return s.Provider.ToString();
+    }
+
+    /// <summary>Whether a built-in or custom service has enough configuration to be used.</summary>
+    private static bool IsAvailable(TranslationProvider provider)
+    {
+        var s = SettingsService.Instance.Current;
+        return provider switch
+        {
+            TranslationProvider.DeepL => !string.IsNullOrWhiteSpace(s.ApiKey),
+            TranslationProvider.Baidu => !string.IsNullOrWhiteSpace(s.TranslationApis.BaiduAppId) &&
+                                         !string.IsNullOrWhiteSpace(s.TranslationApis.BaiduSecretKey),
+            TranslationProvider.Tencent => !string.IsNullOrWhiteSpace(s.TranslationApis.TencentSecretId) &&
+                                           !string.IsNullOrWhiteSpace(s.TranslationApis.TencentSecretKey),
+            TranslationProvider.Youdao => !string.IsNullOrWhiteSpace(s.TranslationApis.YoudaoAppKey) &&
+                                          !string.IsNullOrWhiteSpace(s.TranslationApis.YoudaoAppSecret),
+            TranslationProvider.GoogleCloud => !string.IsNullOrWhiteSpace(s.TranslationApis.GoogleCloudApiKey),
+            TranslationProvider.AzureTranslator => !string.IsNullOrWhiteSpace(s.TranslationApis.AzureSubscriptionKey),
+            TranslationProvider.ChatGPT => !string.IsNullOrWhiteSpace(s.ChatGptApiKey),
+            _ => true,
+        };
+    }
+
+    private static bool IsAvailable(CustomTranslatorService service)
+    {
+        if (!string.IsNullOrWhiteSpace(service.ApiKey)) return true;
+        if (!Uri.TryCreate(service.BaseUrl.Trim(), UriKind.Absolute, out var endpoint)) return false;
+
+        // Local OpenAI-compatible servers commonly need no key. A remote preset with only its
+        // pre-filled URL is still incomplete and must not appear until its API key is saved.
+        return endpoint.IsLoopback;
+    }
+
+    /// <summary>Returns all available options as a grouped WPF view for ComboBox menus.</summary>
     public static ICollectionView GroupedOptions() => GroupedView(Options());
 
-    /// <summary>Returns built-in options as a grouped WPF view.</summary>
+    /// <summary>Returns available built-in options as a grouped WPF view.</summary>
     public static ICollectionView GroupedBuiltInOptions() =>
         GroupedView(Options().Where(option => !option.IsCustom).ToList());
 
@@ -72,16 +132,6 @@ public static class ServiceSelection
         view.GroupDescriptions.Clear();
         view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ServiceOption.Group)));
         return view;
-    }
-
-    /// <summary>The encoded value of the service the shared preference currently names.</summary>
-    public static string CurrentValue()
-    {
-        var s = SettingsService.Instance.Current;
-        if (s.Provider == TranslationProvider.OpenAI &&
-            s.CustomServices.Any(c => c.Id == s.ActiveCustomServiceId))
-            return CustomPrefix + s.ActiveCustomServiceId;
-        return s.Provider.ToString();
     }
 
     /// <summary>Writes a picker's choice back as the built-in half plus the custom half.</summary>

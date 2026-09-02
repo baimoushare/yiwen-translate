@@ -805,6 +805,22 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
+    <!-- Grouped ComboBoxes need a host for the rows inside every GroupItem. The generic
+         ItemsPresenter in ModernComboBox hosts the groups; this template hosts their selectable
+         ComboBoxItem children. Without it only the two group captions are visible and clickable
+         service selection is impossible. -->
+    <ControlTemplate x:Key="ComboBoxGroupTemplate" TargetType="GroupItem">
+        <StackPanel>
+            <ContentPresenter Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              ContentStringFormat="{TemplateBinding ContentStringFormat}"/>
+            <ItemsPresenter/>
+        </StackPanel>
+    </ControlTemplate>
+    <Style x:Key="ComboBoxGroupItemStyle" TargetType="GroupItem">
+        <Setter Property="Template" Value="{StaticResource ComboBoxGroupTemplate}"/>
+    </Style>
+
     <Style x:Key="ModernComboBox" TargetType="ComboBox">
         <Setter Property="FontFamily"              Value="{DynamicResource AppFont}"/>
         <Setter Property="FontSize"                Value="{StaticResource AppFontSize}"/>
@@ -825,13 +841,9 @@
                 </DataTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="ItemsPanel">
-            <Setter.Value>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel IsItemsHost="True"/>
-                </ItemsPanelTemplate>
-            </Setter.Value>
-        </Setter>
+        <!-- Let the ItemsControl create its own items host. A hard-coded panel here only presents
+             top-level GroupItem containers after grouping is enabled, leaving their service rows
+             outside the selectable ComboBox item path. -->
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ComboBoxItem">
@@ -906,7 +918,7 @@
                                                       Opacity="0.15" Color="#000000"/>
                                 </Border.Effect>
                                 <ScrollViewer CanContentScroll="True">
-                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
                                 </ScrollViewer>
                             </Border>
                         </Popup>
