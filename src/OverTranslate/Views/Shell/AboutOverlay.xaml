@@ -80,20 +80,56 @@
                                    HorizontalAlignment="Right"/>
                     </Grid>
 
-                    <Button Style="{StaticResource FlatButton}"
-                            Height="34"
-                            HorizontalAlignment="Stretch"
-                            Click="GitHubBtn_Click">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                       FontSize="14" Text="&#xE774;"
-                                       Width="22" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource AppTextSecondary}"/>
-                            <TextBlock Text="{DynamicResource S.About.ViewSource}"
-                                       VerticalAlignment="Center"
-                                       FontFamily="{DynamicResource AppFont}"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- 左右两枚等宽按钮：GitHub 仓库入口 + 手动检查更新（自动更新只有启动弹窗和
+                         每小时静默轮询，缺一个用户主动询问的入口，见 0.0.4 发版后的排查结论） -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                Style="{StaticResource FlatButton}"
+                                Height="34"
+                                HorizontalAlignment="Stretch"
+                                Click="GitHubBtn_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontSize="14" Text="&#xE774;"
+                                           Width="22" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource AppTextSecondary}"/>
+                                <!-- 品牌名直接写死，与上方作者行一致，不走本地化 -->
+                                <TextBlock Text="GitHub"
+                                           VerticalAlignment="Center"
+                                           FontFamily="{DynamicResource AppFont}"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="CheckUpdateBtn"
+                                Grid.Column="2"
+                                Style="{StaticResource FlatButton}"
+                                Height="34"
+                                HorizontalAlignment="Stretch"
+                                Click="CheckUpdateBtn_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontSize="14" Text="&#xE895;"
+                                           Width="22" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource AppTextSecondary}"/>
+                                <TextBlock Text="{DynamicResource S.About.CheckUpdate}"
+                                           VerticalAlignment="Center"
+                                           FontFamily="{DynamicResource AppFont}"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- 检查过程中的状态反馈行（正在检查 / 已是最新版本），平时隐藏 -->
+                    <TextBlock x:Name="UpdateStatusText"
+                               FontFamily="{DynamicResource AppFont}"
+                               FontSize="12"
+                               Foreground="{DynamicResource AppTextSecondary}"
+                               HorizontalAlignment="Center"
+                               Margin="0,10,0,0"
+                               Visibility="Collapsed"/>
                 </StackPanel>
 
                 <!-- The reader is already using the app, so a feature pitch here has no audience.

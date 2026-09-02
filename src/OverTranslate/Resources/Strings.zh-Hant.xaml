@@ -63,8 +63,11 @@
 
     <!-- ── About ── -->
     <sys:String x:Key="S.About.Author">作者</sys:String>
-    <sys:String x:Key="S.About.ViewSource">在 GitHub 上查看原始碼</sys:String>
     <sys:String x:Key="S.About.Version">版本 {0}</sys:String>
+    <sys:String x:Key="S.About.CheckUpdate">檢查更新</sys:String>
+    <sys:String x:Key="S.About.UpdateChecking">正在檢查…</sys:String>
+    <sys:String x:Key="S.About.UpdateUpToDate">已是最新版本</sys:String>
+    <sys:String x:Key="S.About.UpdateCheckFailed">檢查更新失敗</sys:String>
     <!-- Split around the star glyph, which sits mid-sentence in both languages but not at the same
          point. xml:space keeps the trailing space the English half needs — XAML trims element
          content otherwise, and the Chinese half must have none. -->

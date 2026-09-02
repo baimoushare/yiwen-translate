@@ -33,6 +33,11 @@ public partial class AboutOverlay : UserControl
     {
         Visibility = Visibility.Visible;
 
+        // 上次检查的状态行不跨次保留：重新打开时归零，按钮恢复可用
+        UpdateStatusText.Visibility = Visibility.Collapsed;
+        UpdateStatusText.Text = "";
+        CheckUpdateBtn.IsEnabled = true;
+
         // WPF switches text off pixel snapping as soon as it detects the text is being animated,
         // then ramps snapping back on over roughly a second once the motion stops — which is why
         // the card used to reach its final size and stay soft for a beat before turning sharp, and
@@ -108,4 +113,41 @@ public partial class AboutOverlay : UserControl
 
     private void GitHubBtn_Click(object sender, RoutedEventArgs e)
         => Process.Start(new ProcessStartInfo(GitHubUrl) { UseShellExecute = true });
+
+    /// <summary>
+    /// 手动"检查更新"。自动更新只有启动弹窗和每小时静默轮询，这里是用户主动询问的入口。
+    /// </summary>
+    /// <remarks>
+    /// 与启动检查不同，这里不受"跳过此版本"约束——用户主动来问，就把找到的结果摆出来。
+    /// CheckAsync 内部已吞掉网络异常并返回 null（三种情况都算"没发现"），try/catch 只是给
+    /// async void 事件处理器兜底，防止窗口构建类的意外异常直接带崩进程。
+    /// </remarks>
+    private async void CheckUpdateBtn_Click(object sender, RoutedEventArgs e)
+    {
+        CheckUpdateBtn.IsEnabled = false;
+        UpdateStatusText.Text = LocalizationService.Get("S.About.UpdateChecking");
+        UpdateStatusText.Visibility = Visibility.Visible;
+        try
+        {
+            var info = await UpdateNotifier.CheckAsync();
+            if (info is null)
+            {
+                // null = 已是最新 / 便携或未安装构建 / 检查失败，三者对用户的表现一致
+                UpdateStatusText.Text = LocalizationService.Get("S.About.UpdateUpToDate");
+                return;
+            }
+
+            // 发现新版本：关掉关于弹层，让更新窗口站到台前
+            Close();
+            UpdateWindow.ShowOrActivate(info);
+        }
+        catch
+        {
+            UpdateStatusText.Text = LocalizationService.Get("S.About.UpdateCheckFailed");
+        }
+        finally
+        {
+            CheckUpdateBtn.IsEnabled = true;
+        }
+    }
 }
