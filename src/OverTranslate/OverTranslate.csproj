@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -29,7 +29,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>icons\icon_256.ico</ApplicationIcon>
     <StartupObject>OverTranslate.App</StartupObject>
-    <Version>0.0.4</Version>
+    <Version>0.0.5</Version>
     <AssemblyName>Yiwen</AssemblyName>
     <!-- 改名定稿「译文 / Yiwen」：exe 文件名用 Yiwen.exe（AssemblyName），但命名空间与嵌入式
          资源命名保留 OverTranslate（fork 上游，GPL 衍生关系清晰，diff 最小）。RootNamespace
