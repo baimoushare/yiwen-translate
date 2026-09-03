@@ -3,8 +3,7 @@
 壓一個版號 tag 之後，[release.yml](../../.github/workflows/release.yml)
 會自動打包並建立一個 **pre-release**。
 
-一般使用者看不到它——他們的更新來源是 `GithubSource(prerelease: false)`，pre-release 被過濾掉。
-要在自己機器上看到，就設下面這個環境變數。
+一般使用者看不到它——稳定版更新从 GitHub Latest Release 的静态资产读取；pre-release 测试需要额外打开下面的环境变量。
 
 確認沒問題後，到那個 release 按 **Edit release** 取消勾選 *Set as a pre-release*，
 使用者才會收到。**你測到的與他們收到的是同一批檔案**，不是重打的另一包。
