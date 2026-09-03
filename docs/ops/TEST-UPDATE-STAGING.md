@@ -44,8 +44,8 @@ $env:OVERTRANSLATE_UPDATE_TOKEN = gh auth token
 gh release create staging-1.7.0 --repo asd880921/OverTranslate-Ops `
     --title "staging 1.7.0（排練用）" --notes "驗證更新流程，與使用者無關。" `
     D:\ot-staging\releases.win.json `
-    D:\ot-staging\OverTranslate-1.7.0-full.nupkg `
-    D:\ot-staging\OverTranslate-1.7.0-delta.nupkg
+    D:\ot-staging\Yiwen-1.7.0-full.nupkg `
+    D:\ot-staging\Yiwen-1.7.0-delta.nupkg
 
 # 3. 安裝「舊版」，裝完先完全關掉（含系統匣）
 #    Setup.exe 會被第二包覆蓋成新版的，要裝舊版得把 1.6.9 單獨再打一次到別的資料夾

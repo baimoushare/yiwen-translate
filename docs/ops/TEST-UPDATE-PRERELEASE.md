@@ -26,7 +26,7 @@ new GithubSource(repoUrl, token, prerelease: seesPrerelease)
 //   channel = beta 會一次改掉 channel 與 prerelease 兩者
 ```
 
-CI 打的是 **`win` channel**，release 裡放的是 `releases.win.json` 與 `OverTranslate-<版本>-full.nupkg`。
+CI 打的是 **`win` channel**，release 裡放的是 `releases.win.json` 與 `Yiwen-<版本>-full.nupkg`。
 設 `OVERTRANSLATE_CHANNEL=beta` 的客戶端會去找 `releases.beta.json`——那個 release 裡沒有這個檔，
 所以**什麼都不會發生**。
 
@@ -151,7 +151,7 @@ Releases API 列表 → 依 prerelease 旗標過濾選出一個 release
 清掉環境變數（見上），並把測試用的 pre-release 與 tag 刪掉：
 
 ```powershell
-gh release delete 2.0.0-beta.0 --repo asd880921/OverTranslate --cleanup-tag --yes
+gh release delete 2.0.0-beta.0 --repo baimoushare/yiwen-translate --cleanup-tag --yes
 ```
 
 ---

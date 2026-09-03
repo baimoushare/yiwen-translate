@@ -3,6 +3,7 @@
 | 檔案 | 什麼時候看 |
 |------|-----------|
 | [PUBLISH.md](PUBLISH.md) | 要發版。CI 的正常流程，以及 CI 掛掉時的手動退路 |
+| [RELEASE_NOTES.md](RELEASE_NOTES.md) | 每個版本的使用者更新日誌，GitHub Release 正文的唯一來源 |
 | [TEST-UPDATE-PRERELEASE.md](TEST-UPDATE-PRERELEASE.md) | 要驗「使用者能不能順利更新到下一版」 |
 | [TEST-UPDATE-NOTIFICATION.md](TEST-UPDATE-NOTIFICATION.md) | 要改更新提醒的 UI，需要一個假的新版本來觸發它 |
 | [TEST-UPDATE-STAGING.md](TEST-UPDATE-STAGING.md) | 極少用。要改發布流程本身，且不希望主倉出現任何 release |
@@ -22,4 +23,4 @@
 - [`publish-velopack.ps1`](../../publish-velopack.ps1) —— 打包腳本，CI 與手動共用同一份
 - [`.github/workflows/release.yml`](../../.github/workflows/release.yml) —— 壓 tag 觸發的自動打包
 - `artifacts/releases/` —— 本機打包輸出，未版控。**GitHub Release 才是唯一真相**，
-  換機器或誤刪都能用 `vpk download github` 抓回來
+  換機器或誤刪都能用 `vpk download github` 抓回；Release 正文統一來自 [`RELEASE_NOTES.md`](RELEASE_NOTES.md)。

@@ -1,6 +1,7 @@
 # 打包与发布
 
 发布由 CI 负责：**创建一个版本 tag，GitHub Actions 自动打包并创建 pre-release**。
+Release 正文从 [`RELEASE_NOTES.md`](RELEASE_NOTES.md) 读取对应版本章节；没有章节时 CI 会失败，阻止发布空泛说明。
 验证通过后，手动将其转为正式版，这一步才会推送给普通用户。
 
 本项目使用 **自包含（self-contained）** 发布，用户**无需另外安装 .NET 8 Runtime**。
@@ -33,6 +34,7 @@ tag **不加 `v` 前綴**（沿用本倉慣例）。觸發條件是 `[0-9]*` 或
 [`.github/workflows/release.yml`](../../.github/workflows/release.yml) 會：
 
 - 用 `vpk download github` 抓線上最新**正式版**的 full 包當 delta 基準（runner 每次都是全新的）
+- 穩定版客戶端從 GitHub Latest Release 的靜態地址讀取 `releases.win.json`；預發布和 staging 驗證才使用 GitHub API 源。
 - `dotnet publish`（自封式）+ `vpk pack`，一併產出 portable
 - 建立 **pre-release**，附上 `releases.win.json`、`-full.nupkg`、`-delta.nupkg`、
   `Setup.exe`、`Portable.zip`
@@ -87,7 +89,7 @@ powershell -ExecutionPolicy Bypass -File .\publish-velopack.ps1
 - 版號取自 csproj 的 `<Version>`，或用 `-Version` 覆寫
 - 會先清空 `src\OverTranslate\bin\Publish` 再自封式 publish，最後 `vpk pack`
 - `appsettings.json` 不會被打包進去（會覆蓋使用者既有設定）
-- 一併產出 `OverTranslate-<channel>-Portable.zip`。portable 與安裝版**共用同一條更新 feed** ——
+- 一併產出 `Yiwen-<channel>-Portable.zip`。portable 與安裝版**共用同一條更新 feed** ——
   `releases.<channel>.json` 完全不因 portable 而改變 —— 所以它一樣能自動更新，
   前提是 zip 有跟其他檔案一起上傳到同一個 Release
 - 已手動 publish、只想重新打包時加 `-SkipPublish`
@@ -106,6 +108,10 @@ vpk download github --repoUrl https://github.com/baimoushare/yiwen-translate --c
 - `Yiwen-win-Portable.zip`
 - `Yiwen-<版本>-full.nupkg`（及 `-delta.nupkg`，若有）
 
+### 版本日志
+
+每次发布前先在 [`RELEASE_NOTES.md`](RELEASE_NOTES.md) 增加对应的 `## <版本>` 章节。
+GitHub Release 正文由 CI 自动读取该章节，不要在工作流中重新填写固定说明。
 ---
 
 ## 四、beta channel（現在很少用到）

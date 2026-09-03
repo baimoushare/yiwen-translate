@@ -1,8 +1,11 @@
 # 壓 tag 後自動打包並發成 pre-release。
 #
-# 只發 pre-release，永遠不會直接成為正式版 —— 一般使用者的更新來源是
-# GithubSource(prerelease: false)，看不到標成 pre-release 的 release。
-# 要正式發布時，由人到 GitHub 上手動取消勾選 pre-release。
+# Release 正文從 docs/ops/RELEASE_NOTES.md 按版本號讀取；沒有對應章節就直接失敗，
+# 避免把只有 CI 內部提示的空泛說明發給使用者。
+#
+# 只發 pre-release，永遠不會直接成為正式版 —— 穩定版客戶端從 GitHub Latest Release 的靜態資產
+# 讀取更新；預發行與自訂 staging 才使用 GithubSource(prerelease: true/false) 的 API 流程。
+# 要正式發布時，由人到 GitHub 上手動取消勾選 pre-release，並設為 Latest。
 #
 # 版號**以 tag 為準**（2.0.0-beta.1 → 2.0.0-beta.1），csproj 的 <Version> 不參與。
 # 這是刻意的：測試時常常只想壓一個不同版號的 tag 看打包結果，不該被迫先發一個
@@ -11,7 +14,7 @@
 # tag 沿用本倉既有慣例：不加 v 前綴（1.7.0、1.6.1-beta.1，歷來每一個都是如此）。
 # v 前綴也接受並在解析時去掉，純粹是防手滑——打錯前綴不該讓整條流程安靜地不動。
 #
-# 客戶端不看 tag。它讀 Releases API、依 prerelease 旗標選 release、抓 releases.<channel>.json，
+# 客戶端不看 tag。穩定版讀 Latest Release 的 releases.win.json，預發行與 staging 才走 GitHub API，
 # 版號則來自打包時寫進套件的 packVersion。tag 只在這裡有意義：它決定我們餵給 vpk 的版號。
 name: 打包並發布 pre-release
 
@@ -137,16 +140,44 @@ jobs:
               if (-not (Test-Path $a)) { throw "缺少產物：$a" }
           }
 
-          # 不要用 here-string。它的結尾 "@ 必須頂在行首，而這整段是 YAML 的 run: | 區塊，
-          # 行首沒有縮排就會把 block scalar 截斷，整個 workflow 檔變成無效 YAML
-          # ——症狀是每次 push 都產生一個 0 秒就失敗的 run，連 tag 觸發都不會執行。
+          $notesPath = '.\docs\ops\RELEASE_NOTES.md'
+          if (-not (Test-Path $notesPath)) {
+              throw "找不到版本更新日志：$notesPath"
+          }
+
+          # Release 正文只取当前版本章节，避免把其他版本的改动混进来。
+          $allNotes = @(Get-Content -LiteralPath $notesPath)
+          $heading = "^##\s+$([regex]::Escape($v))\s*$"
+          $start = -1
+          for ($i = 0; $i -lt $allNotes.Length; $i++) {
+              if ($allNotes[$i] -match $heading) {
+                  $start = $i
+                  break
+              }
+          }
+          if ($start -lt 0) {
+              throw "版本更新日志缺少章节：## $v"
+          }
+
+          $end = $allNotes.Length
+          for ($i = $start + 1; $i -lt $allNotes.Length; $i++) {
+              if ($allNotes[$i] -match '^##\s+') {
+                  $end = $i
+                  break
+              }
+          }
+
+          $releaseNotes = ($allNotes[$start..($end - 1)] -join "`n").Trim()
+          if ([string]::IsNullOrWhiteSpace($releaseNotes) -or $releaseNotes -eq "## $v") {
+              throw "版本更新日志章节为空：## $v"
+          }
+
           $notes = @(
-              '自動打包產出，尚未正式發布。'
+              $releaseNotes
               ''
-              '確認無誤後，到本頁按 **Edit release** 取消勾選 *Set as a pre-release*，使用者才會收到這一版。'
-              ''
-              "- commit: ${{ github.sha }}"
-              "- 觸發：${{ github.event_name }}"
+              '---'
+              "- 提交：${{ github.sha }}"
+              "- 触发：${{ github.event_name }}"
           ) -join "`n"
 
           gh release create '${{ steps.ver.outputs.tag }}' `
