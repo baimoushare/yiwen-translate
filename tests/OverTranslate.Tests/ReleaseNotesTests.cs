@@ -6,7 +6,7 @@ namespace OverTranslate.Tests;
 public class ReleaseNotesTests
 {
     private static readonly string[] PublishedVersions =
-        ["0.0.2", "0.0.3", "0.0.4", "0.0.5", "0.0.6", "0.0.7"];
+        ["0.0.2", "0.0.3", "0.0.4", "0.0.5", "0.0.6", "0.0.7", "0.0.8"];
 
     [Fact]
     public void Every_published_version_has_a_non_empty_release_notes_section()
