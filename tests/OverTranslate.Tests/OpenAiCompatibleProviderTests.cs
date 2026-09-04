@@ -612,6 +612,9 @@ public class OpenAiCompatibleProviderTests
     [InlineData("请提供需要翻译的内容")]
     [InlineData("Please provide the text to translate.")]
     [InlineData("抱歉，我无法翻译这段内容")]
+    // 2026-09 实机抓到的 DeepSeek 回复形状：先寒暄再索要内容、道歉着说没学会。
+    [InlineData("用户您好，您提供的内容似乎不完整，没有需要翻译的文本。请提供需要翻译的英文内容，我将为您翻译成简体中文。")]
+    [InlineData("对不起，我还没有学会回答这个问题。如果您有其他问题，我非常乐意为您提供帮助。")]
     public async Task ConversationalFallbackAnswerIsRejected(string response)
     {
         var json = $"{{\"choices\":[{{\"message\":{{\"content\":{JsonSerializer.Serialize(response)}}}}}]}}";
@@ -626,11 +629,11 @@ public class OpenAiCompatibleProviderTests
     }
 
     /// <summary>
-    /// One bad block fails the whole capture, and the message still has to name the cause.
+    /// Every block failing is still the capture failing, and the message still has to name the cause.
     /// </summary>
     /// <remarks>
-    /// The blocks go out in parallel, and what that does to an exception on the way out is what
-    /// decides whether the toast names the problem or talks about one or more errors occurring.
+    /// 单块失败已不再拖垮批次（见下方降级组测试）；这条钉住的是另一半语义——一块译文都
+    /// 没拿到时，向上抛的必须还是那条可读的错误，而不是聚合包装。
     /// </remarks>
     [Fact]
     public async Task ABadAnswerInABatchStillNamesItself()
@@ -643,10 +646,6 @@ public class OpenAiCompatibleProviderTests
             .Select(index => new OcrTextBlock($"block-{index}", new Rect()))
             .ToList();
 
-        // These blocks are translated on thread-pool threads, and with no Application in a test run
-        // the very first string lookup is what builds the fallback dictionary — a XamlParseException
-        // waiting to happen on whichever thread gets there first. The running app always has an
-        // Application, so it never takes that path; this stands in for it.
         var expected = LocalizationService.Get("S.Error.OpenAiNoTranslation");
 
         var error = await Assert.ThrowsAnyAsync<Exception>(() =>
@@ -677,7 +676,181 @@ public class OpenAiCompatibleProviderTests
             error.Message);
     }
 
+    // ── 块级降级：一块不可翻或失败，不再拖垮整次截图 ───────────────────────
+    //
+    // 混合内容的截图（模型名、下载计数、已是目标语言的标签混着正常文本）是这类失败的来源：
+    // 通用对话模型对无可翻内容的块回客套话，以前一块失败整批弹“翻译失败”。现在的契约是
+    // 失败块留空（覆盖层不画、原图保留），其余块照常翻译；只有一块译文都没有时才向上抛。
+
+    // 纯数字/符号块没有可翻内容：一个请求都不发，译文留空让覆盖层跳过该块。
+    [Fact]
+    public async Task DigitsOnlyBlocksAreNeverSentToTheModel()
+    {
+        var handler = new RecordingHandler();
+        using var http = new HttpClient(handler);
+        var provider = new OpenAiCompatibleProvider(
+            http, () => new OpenAiCompatibleOptions("http://localhost:1234/v1", "test-model"));
+        var blocks = new List<OcrTextBlock>
+        {
+            new("12,345", new Rect()),
+            new("hello", new Rect(1, 2, 30, 40)),
+        };
+
+        var (translated, _) = await provider.TranslateAsync(blocks, "EN", "ZH-HANT", "");
+
+        Assert.Equal("hello", SingleUserText(handler));
+        Assert.Equal(["", "translated:hello"], translated.Select(block => block.TranslatedText));
+    }
+
+    // 整块区域都无字母（比如框到了一排下载计数）：没有任何请求、也没有错误——本来就没东西可翻。
+    [Fact]
+    public async Task ARegionOfNothingButNumbersSucceedsWithoutAnyRequest()
+    {
+        var handler = new RecordingHandler();
+        using var http = new HttpClient(handler);
+        var provider = new OpenAiCompatibleProvider(
+            http, () => new OpenAiCompatibleOptions("http://localhost:1234/v1", "test-model"));
+
+        var (translated, _) = await provider.TranslateAsync(
+            [new OcrTextBlock("1,234", new Rect()), new OcrTextBlock("304", new Rect())],
+            "EN", "ZH-HANT", "");
+
+        Assert.Empty(handler.Requests);
+        Assert.All(translated, block => Assert.Equal("", block.TranslatedText));
+    }
+
+    // 客套话只废掉它自己那一块，其余块照常翻出，批次不抛错。
+    [Fact]
+    public async Task AConversationalAnswerDegradesOnlyItsOwnBlock()
+    {
+        var handler = new PerBlockResponseHandler(new Dictionary<string, (HttpStatusCode, string)>
+        {
+            ["zai-org/GLM-5.3"] = (HttpStatusCode.OK, "请提供需要翻译的内容。"),
+            ["Text Generation"] = (HttpStatusCode.OK, "文本生成"),
+        });
+        using var http = new HttpClient(handler);
+        var provider = new OpenAiCompatibleProvider(
+            http, () => new OpenAiCompatibleOptions("http://localhost:1234/v1", "test-model"));
+
+        var (translated, _) = await provider.TranslateAsync(
+            [new OcrTextBlock("zai-org/GLM-5.3", new Rect()), new OcrTextBlock("Text Generation", new Rect())],
+            "EN", "ZH-HANS", "");
+
+        Assert.Equal(["", "文本生成"], translated.Select(block => block.TranslatedText));
+    }
+
+    // 服务端错误同样只降级出错的块；另一块的译文照常返回。
+    [Fact]
+    public async Task AServerErrorOnOneBlockLeavesTheOthersTranslated()
+    {
+        var handler = new PerBlockResponseHandler(new Dictionary<string, (HttpStatusCode, string)>
+        {
+            ["hello"] = (HttpStatusCode.InternalServerError, """{"error":{"message":"boom"}}"""),
+            ["world"] = (HttpStatusCode.OK, "translated:world"),
+        });
+        using var http = new HttpClient(handler);
+        var provider = new OpenAiCompatibleProvider(
+            http, () => new OpenAiCompatibleOptions("http://localhost:1234/v1", "test-model"));
+
+        var (translated, _) = await provider.TranslateAsync(
+            [new OcrTextBlock("hello", new Rect()), new OcrTextBlock("world", new Rect())],
+            "EN", "ZH-HANT", "");
+
+        Assert.Equal(["", "translated:world"], translated.Select(block => block.TranslatedText));
+    }
+
+    // 全部请求都撞上服务端错误时，抛的还是真实的服务端错误：弹窗要说清是接口坏了。
+    [Fact]
+    public async Task EveryRequestFailingStillSurfacesTheServerError()
+    {
+        const string response = """{"error":{"message":"boom"}}""";
+        using var http = new HttpClient(
+            new StaticResponseHandler(HttpStatusCode.InternalServerError, response));
+        var provider = new OpenAiCompatibleProvider(
+            http, () => new OpenAiCompatibleOptions("http://localhost:1234/v1", "test-model"));
+
+        var error = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            provider.TranslateAsync(
+                [new OcrTextBlock("hello", new Rect()), new OcrTextBlock("world", new Rect())],
+                "EN", "ZH-HANT", ""));
+
+        Assert.Contains("boom", error.Message);
+    }
+
+    // 单块超时不能再被上层当成“用户取消会话”静默吞掉：它按接口类失败上报超时文案。
+    [Fact]
+    public async Task APerRequestTimeoutIsAClassifiedFailureNotSilence()
+    {
+        using var http = new HttpClient(new TimingOutHandler());
+        var provider = new OpenAiCompatibleProvider(
+            http, () => new OpenAiCompatibleOptions("http://localhost:1234/v1", "test-model"));
+
+        // 先在测试线程取一次：provider 在工作线程上查同一条文案，预热避免首查竞争。
+        var expected = LocalizationService.Get("S.Error.OpenAiTimeout");
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.TranslateAsync([new OcrTextBlock("hello", new Rect())], "EN", "ZH-HANT", ""));
+
+        Assert.Equal(expected, error.Message);
+    }
+
+    // 用户取消照旧原样传播：不吞、不算块失败、不发请求。
+    [Fact]
+    public async Task UserCancellationStillPropagates()
+    {
+        var handler = new RecordingHandler();
+        using var http = new HttpClient(handler);
+        var provider = new OpenAiCompatibleProvider(
+            http, () => new OpenAiCompatibleOptions("http://localhost:1234/v1", "test-model"));
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            provider.TranslateAsync(
+                [new OcrTextBlock("hello", new Rect())], "EN", "ZH-HANT", "",
+                cancelled.Token));
+
+        Assert.Empty(handler.Requests);
+    }
+
     private sealed record RecordedRequest(string Url, string? Authorization, string Body);
+
+    private static string SingleUserText(RecordingHandler handler)
+    {
+        using var payload = JsonDocument.Parse(Assert.Single(handler.Requests).Body);
+        return payload.RootElement.GetProperty("messages")[1].GetProperty("content").GetString()!;
+    }
+
+    /// <summary>
+    /// Answers each request from a map keyed by the user text it carries, so one test can give
+    /// different blocks different fates on the same endpoint.
+    /// </summary>
+    private sealed class PerBlockResponseHandler(
+        IReadOnlyDictionary<string, (HttpStatusCode Status, string Content)> replies) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var body = await request.Content!.ReadAsStringAsync(cancellationToken);
+            using var payload = JsonDocument.Parse(body);
+            var userText = payload.RootElement.GetProperty("messages")[1]
+                .GetProperty("content").GetString()!;
+            var (status, content) = replies[userText];
+            var responseBody = status == HttpStatusCode.OK
+                ? $"{{\"choices\":[{{\"message\":{{\"content\":{JsonSerializer.Serialize(content)}}}}}]}}"
+                : content;
+            return new HttpResponseMessage(status) { Content = new StringContent(responseBody) };
+        }
+    }
+
+    /// <summary>Throws like an HttpClient whose timeout expired, without waiting for one.</summary>
+    private sealed class TimingOutHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) => throw new TaskCanceledException();
+    }
 
     private sealed class RecordingHandler : HttpMessageHandler
     {

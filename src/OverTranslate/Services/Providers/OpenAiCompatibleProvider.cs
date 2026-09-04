@@ -37,6 +37,8 @@ public sealed record OpenAiCompatibleOptions(
 /// <summary>
 /// Translates through the OpenAI-compatible Chat Completions contract. Each OCR block is an
 /// independent request so its bounds and ordering stay aligned with the existing provider model.
+/// A block the model cannot translate (empty, conversational, or failed) degrades to an empty
+/// translation instead of failing the capture; the batch throws only when nothing translated.
 /// </summary>
 public sealed class OpenAiCompatibleProvider : ITranslationProvider
 {
@@ -49,8 +51,18 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
 
     // 兼容接口上的通用对话模型在输入为空、乱码或上下文不足时，常会返回礼貌性询问。
     // 这类文本不是译文，若直接透传到覆盖层，就会看起来像软件自己弹出的提示。
+    // 枚举式匹配注定追不全模型的措辞——真正的兜底是块级降级（见 TranslateAsync），
+    // 这里只拦最常见的形状，漏网的代价已被降级限制在单个块内。
     private static readonly Regex NonTranslationReply = new(
-        @"^(?:好的?[，,。.!！]?\s*)?(?:请|需要|麻烦)(?:提供|输入|发送|给出).{0,80}(?:翻译|内容|文本|文字).*[。.!！?？]?$|^(?:我无法|无法|抱歉|对不起).{0,80}(?:翻译|处理|识别).*$|^(?:please\s+)?(?:provide|enter|send|give)\s+(?:the\s+)?(?:text|content)\s*(?:to\s+translate)?[.!?]?$",
+        @"^(?:好的?[，,。.!！]?\s*)?(?:请|需要|麻烦)(?:提供|输入|发送|给出).{0,80}(?:翻译|内容|文本|文字).*[。.!！?？]?$"
+        + @"|^(?:我无法|无法|抱歉|对不起).{0,80}(?:翻译|处理|识别).*$"
+        + @"|^(?:please\s+)?(?:provide|enter|send|give)\s+(?:the\s+)?(?:text|content)\s*(?:to\s+translate)?[.!?]?$"
+        // “用户您好，您提供的内容似乎不完整……请提供需要翻译的英文内容”：先寒暄再索要内容的回复
+        + @"|^(?:用户您好|您好|你好)[，,].{0,120}(?:请|需要)(?:提供|输入|发送|给出).{0,40}(?:翻译|内容|文本|文字)"
+        // 结尾主动揽活的“我将为您翻译成简体中文”
+        + @"|(?:我|我们)[^。！？!?\r\n]{0,10}(?:将|会|可以)[^。！？!?\r\n]{0,20}(?:为您|帮你|帮您|为你)翻[译譯]"
+        // “对不起，我还没有学会回答这个问题”：道歉但不含翻译/处理/识别关键词的拒绝
+        + @"|^(?:对不起|抱歉|不好意思)[，,].{0,60}(?:没有学会|无法回答|不知道|无法理解)",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 
     private readonly HttpClient _http;
@@ -116,6 +128,15 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
         Log.Debug("OpenAI 相容翻譯 prompt=\"{Prompt}\"", prompt);
 
         var translations = new string[blocks.Count];
+
+        // 块级降级的账本：一次截图里常混着不可翻的块（纯数字、已是目标语言的标签），通用
+        // 对话模型对这类输入回的是客套话而非译文。这样的块留空跳过——覆盖层对空译文本来就
+        // 不画、原图原样保留——不能再让它们把其余正常块的翻译一起拖垮。
+        int attempted = 0;         // 实际发出请求的块数
+        int translatedCount = 0;   // 拿到非空译文的块数
+        var hardFailures = new List<(int Index, Exception Error)>();  // 网络/服务端类失败
+        var failuresLock = new object();
+
         await Parallel.ForEachAsync(
             Enumerable.Range(0, blocks.Count),
             new ParallelOptions
@@ -125,23 +146,74 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
             },
             async (index, token) =>
             {
-                translations[index] = await TranslateOneAsync(
-                    blocks[index].Text,
-                    prompt,
-                    configuredApiKey,
-                    endpoint,
-                    model,
-                    options.SendTemperature ? options.Temperature : null,
-                    options.TimeoutSeconds,
-                    token);
+                var text = blocks[index].Text;
+
+                // 纯数字、符号、标点组成的块没有可翻内容：不发请求，直接留空。
+                if (!HasTranslatableCharacters(text))
+                {
+                    translations[index] = "";
+                }
+                else
+                {
+                    try
+                    {
+                        var reply = await TranslateOneAsync(
+                            text, prompt, configuredApiKey, endpoint, model,
+                            options.SendTemperature ? options.Temperature : null,
+                            options.TimeoutSeconds, token);
+                        Interlocked.Increment(ref attempted);
+                        translations[index] = reply ?? "";
+                        if (reply is not null) Interlocked.Increment(ref translatedCount);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        // 会话被用户拆除（Esc、重新框选）：照旧向外传播，不算块失败。
+                        throw;
+                    }
+                    catch (OperationCanceledException ex)
+                    {
+                        // 单块预算或共享 HttpClient 的超时，不是用户取消：记为接口类失败，
+                        // 否则上层会把超时当“会话已拆除”静默吞掉。
+                        Interlocked.Increment(ref attempted);
+                        lock (failuresLock)
+                            hardFailures.Add((index, new InvalidOperationException(
+                                LocalizationService.Get("S.Error.OpenAiTimeout"), ex)));
+                        translations[index] = "";
+                    }
+                    catch (Exception ex)
+                    {
+                        Interlocked.Increment(ref attempted);
+                        lock (failuresLock) hardFailures.Add((index, ex));
+                        translations[index] = "";
+                        Log.Warn(ex, "OpenAI 相容翻譯：區塊 {Index} 請求失敗，該塊保留原文", index);
+                    }
+                }
 
                 // Both sides of one block on one line: a block that came back still in its own
                 // language is the shape this provider fails in, and that is only visible by reading
                 // the request against the reply.
                 if (Log.IsDebugEnabled)
                     Log.Debug("OpenAI 相容翻譯 index={Index} in=\"{In}\" out=\"{Out}\"",
-                        index, blocks[index].Text, translations[index]);
+                        index, text, translations[index]);
             });
+
+        if (translatedCount < attempted)
+            Log.Info(
+                "OpenAI 相容翻譯：{Translated}/{Attempted} 個區塊取得譯文（{Degraded} 個無可翻內容，{Failed} 個請求失敗）",
+                translatedCount, attempted, attempted - translatedCount - hardFailures.Count,
+                hardFailures.Count);
+
+        // 全军覆没才向上抛：只要有一块翻出来，失败已在块级消化。一块都没翻出来说明接口本身
+        // 有问题——有服务端错误时报真实错误，否则就是模型一路回复“没有可翻内容”。
+        if (attempted > 0 && translatedCount == 0)
+        {
+            Exception? first = null;
+            lock (failuresLock)
+                first = hardFailures.OrderBy(failure => failure.Index)
+                    .Select(failure => failure.Error).FirstOrDefault();
+            throw first ?? new InvalidOperationException(
+                LocalizationService.Get("S.Error.OpenAiNoTranslation"));
+        }
 
         var results = new List<TranslatedBlock>(blocks.Count);
         for (int i = 0; i < blocks.Count; i++)
@@ -159,8 +231,13 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
         return (results, detected);
     }
 
+    /// <summary>
+    /// One block through the endpoint. Returns null when the answer holds no translation (empty, or
+    /// a conversational reply) — a content-level miss the caller degrades per block. Transport and
+    /// server failures still throw, so an outage stays distinguishable from “nothing to translate”.
+    /// </summary>
     /// <param name="temperature">The temperature to ask for, or null to leave the field out.</param>
-    private async Task<string> TranslateOneAsync(
+    private async Task<string?> TranslateOneAsync(
         string text,
         string prompt,
         string apiKey,
@@ -225,7 +302,7 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
 
         var translated = StripThinking(content);
         if (translated.Length == 0 || NonTranslationReply.IsMatch(translated))
-            throw new InvalidOperationException(LocalizationService.Get("S.Error.OpenAiNoTranslation"));
+            return null;   // 模型按提示词约定回了空串，或回了客套话：内容类未译，由调用方降级该块
         return translated;
     }
 
@@ -614,6 +691,15 @@ public sealed class OpenAiCompatibleProvider : ITranslationProvider
     }
 
     internal static string StripThinking(string value) => ThinkingBlock.Replace(value, "").Trim();
+
+    /// <summary>
+    /// Whether a block holds anything worth a request: at least one letter anywhere in it.
+    /// </summary>
+    /// <remarks>
+    /// 纯数字、符号、标点组成的块（下载计数、分隔线、型号尾号）没有可翻内容，发出去只会换
+    /// 来客套回复或原样返回。按 Unicode 字母类别判断，拉丁、CJK、西里尔等文字系统都算。
+    /// </remarks>
+    internal static bool HasTranslatableCharacters(string text) => text.Any(char.IsLetter);
 
     private static string ReadContent(JsonElement message)
     {
